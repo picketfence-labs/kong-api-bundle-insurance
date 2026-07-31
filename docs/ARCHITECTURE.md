@@ -2,27 +2,41 @@
 
 ## 全体構成
 
-```
-                 ┌─────────────────────────────┐
-                 │        Kong Konnect          │
-                 │  (Control Plane: kong-        │
-                 │   insurance-demo / US region) │
-                 │   Service / Route 定義を管理   │
-                 └──────────────┬──────────────┘
-                                │ 設定配信・テレメトリ (mTLS)
-                                ▼
-   Client ──▶ ┌──────────────────────────────┐
-              │  Kong Gateway (Data Plane)     │  hybrid mode
-              │  3.15 Enterprise               │  プロキシのみ(DBレス)
-              └──────────────┬───────────────┘
-                             │  /product /customer /simulation
-                             │  /application /policy /claim
-        ┌────────┬───────────┼───────────┬────────┬────────┐
-        ▼        ▼           ▼           ▼        ▼        ▼
-    product  customer  simulation  application  policy   claim   ← FastAPI (各コンテナ)
-      :8000    :8000     :8000       :8000      :8000    :8000
-        │        │          │(計算のみ)   │         │        │
-        └── data/seed/*.json をメモリにロードしてCRUD ──────┘
+```mermaid
+flowchart TB
+  client(["Client"])
+
+  subgraph konnect["Kong Konnect (Control Plane: kong-insurance-demo / US)"]
+    cp["Service / Route 定義を管理<br/>Terraform で構築"]
+  end
+
+  dp["Kong Gateway (Data Plane)<br/>3.15 Enterprise / hybrid mode<br/>プロキシのみ (DBレス)"]
+
+  subgraph backend["バックエンド (FastAPI / 各コンテナ :8000)"]
+    product["product"]
+    customer["customer"]
+    simulation["simulation<br/>(計算のみ)"]
+    application["application"]
+    policy["policy"]
+    claim["claim"]
+  end
+
+  seed[("data/seed/*.json<br/>起動時にメモリロード")]
+
+  cp -- "設定配信・テレメトリ (mTLS)" --> dp
+  client --> dp
+  dp -- "/product" --> product
+  dp -- "/customer" --> customer
+  dp -- "/simulation" --> simulation
+  dp -- "/application" --> application
+  dp -- "/policy" --> policy
+  dp -- "/claim" --> claim
+
+  product -.-> seed
+  customer -.-> seed
+  application -.-> seed
+  policy -.-> seed
+  claim -.-> seed
 ```
 
 - **Kong Konnect** が Control Plane。Control Plane 自体・Service / Route・DP証明書を Terraform で構築する。
