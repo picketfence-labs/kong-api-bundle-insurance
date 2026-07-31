@@ -1,0 +1,52 @@
+# Kong Operator が管理する Gateway。KonnectExtension を attach することで、
+# DataPlane が Konnect に hybrid mode で接続し、Konnect 側の設定
+# (KongService/KongRoute から同期されたもの)をプロキシする。
+---
+apiVersion: gateway-operator.konghq.com/v2beta1
+kind: GatewayConfiguration
+metadata:
+  name: insurance-gw-config
+  namespace: insurance
+spec:
+  extensions:
+    - group: konnect.konghq.com
+      kind: KonnectExtension
+      name: insurance-konnect
+  dataPlaneOptions:
+    deployment:
+      replicas: 1
+      podTemplateSpec:
+        spec:
+          containers:
+            - name: proxy
+              image: kong/kong-gateway:3.15
+  controlPlaneOptions:
+    watchNamespaces:
+      type: all
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: insurance-kong
+spec:
+  controllerName: konghq.com/gateway-operator
+  parametersRef:
+    group: gateway-operator.konghq.com
+    kind: GatewayConfiguration
+    name: insurance-gw-config
+    namespace: insurance
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: insurance
+  namespace: insurance
+spec:
+  gatewayClassName: insurance-kong
+  listeners:
+    - name: proxy
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: Same

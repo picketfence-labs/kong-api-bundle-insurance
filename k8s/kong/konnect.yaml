@@ -1,0 +1,58 @@
+# Konnect との接続定義。
+# - KonnectAPIAuthConfiguration: Konnect API 認証(PAT を Secret から参照)
+# - KonnectGatewayControlPlane: Terraform が作成した CP を Mirror として参照
+#   （CP のライフサイクルは Terraform が所有し、Operator は参照のみ）
+# - KonnectExtension: DataPlane を Konnect に接続。DP クライアント証明書は
+#   Automatic で Operator が自動発行・登録する。
+#
+# 事前に PAT の Secret を作成しておくこと(INSTRUCTIONS 参照)。
+# ラベル konghq.com/secret=true は必須(Kong Operator の Secret キャッシュが
+# このラベルで絞り込むため。付け忘れると "Secret not found" になる):
+#   kubectl -n insurance create secret generic konnect-pat \
+#     --from-literal=token=$KONNECT_PAT
+#   kubectl -n insurance label secret konnect-pat \
+#     konghq.com/secret=true konghq.com/credential=konnect
+#
+# __CONTROL_PLANE_ID__ は `terraform -chdir=terraform/konnect output -raw control_plane_id`
+# の値に置き換えること(scripts/deploy_k8s.sh が自動で行う)。
+---
+apiVersion: konnect.konghq.com/v1alpha1
+kind: KonnectAPIAuthConfiguration
+metadata:
+  name: konnect-auth
+  namespace: insurance
+spec:
+  type: secretRef
+  serverURL: https://us.api.konghq.com
+  secretRef:
+    name: konnect-pat
+---
+apiVersion: konnect.konghq.com/v1alpha2
+kind: KonnectGatewayControlPlane
+metadata:
+  name: insurance-cp
+  namespace: insurance
+spec:
+  source: Mirror
+  mirror:
+    konnect:
+      id: __CONTROL_PLANE_ID__
+  konnect:
+    authRef:
+      name: konnect-auth
+---
+apiVersion: konnect.konghq.com/v1alpha2
+kind: KonnectExtension
+metadata:
+  name: insurance-konnect
+  namespace: insurance
+spec:
+  konnect:
+    controlPlane:
+      ref:
+        type: konnectNamespacedRef
+        konnectNamespacedRef:
+          name: insurance-cp
+  clientAuth:
+    certificateSecret:
+      provisioning: Automatic

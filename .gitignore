@@ -1,12 +1,7 @@
 .venv/
 __pycache__/
 *.pyc
-.env
-docker-compose.override.yml
 .claude/settings.local.json
-
-# DP証明書・鍵(Terraformが certs/ に生成)
-certs/
 
 # Terraform (.terraform.lock.hcl は意図的にコミットする)
 **/.terraform/

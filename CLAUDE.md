@@ -6,7 +6,7 @@
 
 Kong Gateway Enterprise 3.15 + Kong Konnect を前段に置き、損害保険ドメインの
 6サンプルAPI（product / simulation / customer / application / policy / claim）を
-稼働させるデモ環境。**このリポジトリは公開予定**。まず Docker Compose、後工程で AWS ECS。
+稼働させるデモ環境。**このリポジトリは公開予定**。実行基盤は Kubernetes（ローカル検証は Minikube）、ゲートウェイは Kong Operator で管理する。
 
 ## ドキュメント構成の取り決め
 
@@ -30,8 +30,10 @@ Kong Gateway Enterprise 3.15 + Kong Konnect を前段に置き、損害保険ド
   商品カテゴリと請求種別の整合など、ドメイン的な矛盾を作らない。
 - **商品ドメイン**: 損害保険会社を想定。生命保険・学資保険は扱わない。
 - **マイナンバーのAPI公開**: 現状は raw（フル桁）で返却。将来、利用者ロールに応じて raw/masked を切り替える。
-- **Konnect / IaC**: Control Plane・Service・Route・DP証明書はすべて **Terraform**（`terraform/konnect/`、Kong/konnect provider）で管理する。decK は使用しない。最初は Service と Route のみを定義し、認証等のプラグインは後日 Terraform で追加。
-- **デプロイ方式**: Docker Compose（`docker-compose.yml`）と AWS ECS（`terraform/ecs/`）の2通りを、どちらも選択可能なサンプルとして維持する。片方をローカル専用/本番専用と位置づけない。ECS はサービス間解決に Service Connect を用い、Kong の Service host（`product` 等）と一致させる。
+- **実行基盤**: Kubernetes に一本化（Docker Compose・AWS ECS は廃止）。ローカル検証は Minikube。イメージは Minikube の Docker に直接ビルドしレジストリ不要。
+- **ゲートウェイ管理**: **Kong Operator** を使用（decK は使用しない）。Service/Route は Kong Operator の CRD（`KongService`/`KongRoute`）で定義し、Konnect に同期する。認証等のプラグインは後日 `KongPlugin` CRD で追加。
+- **Konnect / IaC の役割分担**: Control Plane は **Terraform**（`terraform/konnect/`）が作成・所有し、k8s の `KonnectGatewayControlPlane` は `source: Mirror` で ID 参照するのみ。DP クライアント証明書は `KonnectExtension`（provisioning: Automatic）で Operator が自動発行するため Terraform では扱わない。
+- **PAT Secret のラベル**: Kong Operator の Secret キャッシュはラベル `konghq.com/secret=true` で絞り込む。PAT Secret にこのラベルが無いと `Secret not found` になるため必須。
 - **Konnect 反映先**: US リージョン / 組織 `hashi-sandbox` / Control Plane `kong-insurance-demo`。
 
 ## データモデル変更のワークフロー
@@ -42,5 +44,6 @@ Kong Gateway Enterprise 3.15 + Kong Konnect を前段に置き、損害保険ド
 ## 秘匿情報の取り扱い
 
 - `KONNECT_PAT` などのトークンは環境変数で渡す。**リポジトリにコミットしない**。
-- `.env`、`certs/`（DP証明書）、`terraform.tfvars`、`*.tfstate` は `.gitignore` 済み。`.env.example` / `terraform.tfvars.example` のみコミットする。
+- `terraform.tfvars`、`*.tfstate` は `.gitignore` 済み。`terraform.tfvars.example` のみコミットする。
 - Terraform の PAT は `TF_VAR_konnect_pat` 環境変数で渡す（tfvars に書かない）。
+- Kubernetes の PAT は `konnect-pat` Secret として `kubectl` で作成する（マニフェストに平文で書かない）。`scripts/deploy_k8s.sh` が `KONNECT_PAT` 環境変数から作成する。

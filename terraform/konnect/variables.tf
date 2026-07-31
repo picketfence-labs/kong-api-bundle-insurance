@@ -22,14 +22,6 @@ variable "control_plane_description" {
   default     = "保険ドメイン APIバンドル (product/simulation/customer/application/policy/claim) のデモ用 Control Plane"
 }
 
-variable "generate_dp_certificate" {
-  description = "Kong Data Plane 接続用の自己署名証明書を生成し、Control Plane に登録するか。ローカルで DP を起動する場合は true。"
-  type        = bool
-  default     = true
-}
-
-variable "dp_cert_output_dir" {
-  description = "生成した DP 証明書・鍵の出力先ディレクトリ(モジュールからの相対。既定はリポジトリルートの certs/)。"
-  type        = string
-  default     = "../../certs"
-}
+# Data Plane のクライアント証明書は Kong Operator が KonnectExtension の
+# clientAuth(provisioning: Automatic)で自動発行・登録するため、Terraform では
+# 証明書を扱わない。

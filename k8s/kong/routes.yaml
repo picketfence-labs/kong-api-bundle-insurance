@@ -1,0 +1,190 @@
+# Service と Route を Kong Operator の CRD で定義する。
+# controlPlaneRef で Konnect の Control Plane(insurance-cp) を指すため、
+# これらは Konnect 側のエンティティとして同期され、DataPlane がプロキシする。
+# host は同一 namespace のバックエンド Service 名(<svc>.insurance.svc)を指す。
+---
+apiVersion: configuration.konghq.com/v1alpha1
+kind: KongService
+metadata:
+  name: product
+  namespace: insurance
+spec:
+  name: product
+  controlPlaneRef:
+    type: konnectNamespacedRef
+    konnectNamespacedRef:
+      name: insurance-cp
+  protocol: http
+  host: product
+  port: 8000
+  tags: ["insurance", "product"]
+---
+apiVersion: configuration.konghq.com/v1alpha1
+kind: KongRoute
+metadata:
+  name: product-route
+  namespace: insurance
+spec:
+  name: product-route
+  serviceRef:
+    type: namespacedRef
+    namespacedRef:
+      name: product
+  paths: ["/product"]
+  strip_path: true
+  tags: ["insurance", "product"]
+---
+apiVersion: configuration.konghq.com/v1alpha1
+kind: KongService
+metadata:
+  name: customer
+  namespace: insurance
+spec:
+  name: customer
+  controlPlaneRef:
+    type: konnectNamespacedRef
+    konnectNamespacedRef:
+      name: insurance-cp
+  protocol: http
+  host: customer
+  port: 8000
+  tags: ["insurance", "customer"]
+---
+apiVersion: configuration.konghq.com/v1alpha1
+kind: KongRoute
+metadata:
+  name: customer-route
+  namespace: insurance
+spec:
+  name: customer-route
+  serviceRef:
+    type: namespacedRef
+    namespacedRef:
+      name: customer
+  paths: ["/customer"]
+  strip_path: true
+  tags: ["insurance", "customer"]
+---
+apiVersion: configuration.konghq.com/v1alpha1
+kind: KongService
+metadata:
+  name: simulation
+  namespace: insurance
+spec:
+  name: simulation
+  controlPlaneRef:
+    type: konnectNamespacedRef
+    konnectNamespacedRef:
+      name: insurance-cp
+  protocol: http
+  host: simulation
+  port: 8000
+  tags: ["insurance", "simulation"]
+---
+apiVersion: configuration.konghq.com/v1alpha1
+kind: KongRoute
+metadata:
+  name: simulation-route
+  namespace: insurance
+spec:
+  name: simulation-route
+  serviceRef:
+    type: namespacedRef
+    namespacedRef:
+      name: simulation
+  paths: ["/simulation"]
+  strip_path: true
+  tags: ["insurance", "simulation"]
+---
+apiVersion: configuration.konghq.com/v1alpha1
+kind: KongService
+metadata:
+  name: application
+  namespace: insurance
+spec:
+  name: application
+  controlPlaneRef:
+    type: konnectNamespacedRef
+    konnectNamespacedRef:
+      name: insurance-cp
+  protocol: http
+  host: application
+  port: 8000
+  tags: ["insurance", "application"]
+---
+apiVersion: configuration.konghq.com/v1alpha1
+kind: KongRoute
+metadata:
+  name: application-route
+  namespace: insurance
+spec:
+  name: application-route
+  serviceRef:
+    type: namespacedRef
+    namespacedRef:
+      name: application
+  paths: ["/application"]
+  strip_path: true
+  tags: ["insurance", "application"]
+---
+apiVersion: configuration.konghq.com/v1alpha1
+kind: KongService
+metadata:
+  name: policy
+  namespace: insurance
+spec:
+  name: policy
+  controlPlaneRef:
+    type: konnectNamespacedRef
+    konnectNamespacedRef:
+      name: insurance-cp
+  protocol: http
+  host: policy
+  port: 8000
+  tags: ["insurance", "policy"]
+---
+apiVersion: configuration.konghq.com/v1alpha1
+kind: KongRoute
+metadata:
+  name: policy-route
+  namespace: insurance
+spec:
+  name: policy-route
+  serviceRef:
+    type: namespacedRef
+    namespacedRef:
+      name: policy
+  paths: ["/policy"]
+  strip_path: true
+  tags: ["insurance", "policy"]
+---
+apiVersion: configuration.konghq.com/v1alpha1
+kind: KongService
+metadata:
+  name: claim
+  namespace: insurance
+spec:
+  name: claim
+  controlPlaneRef:
+    type: konnectNamespacedRef
+    konnectNamespacedRef:
+      name: insurance-cp
+  protocol: http
+  host: claim
+  port: 8000
+  tags: ["insurance", "claim"]
+---
+apiVersion: configuration.konghq.com/v1alpha1
+kind: KongRoute
+metadata:
+  name: claim-route
+  namespace: insurance
+spec:
+  name: claim-route
+  serviceRef:
+    type: namespacedRef
+    namespacedRef:
+      name: claim
+  paths: ["/claim"]
+  strip_path: true
+  tags: ["insurance", "claim"]
