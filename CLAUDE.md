@@ -19,6 +19,7 @@ Kong Gateway Enterprise 3.15 + Kong Konnect を前段に置き、損害保険ド
 | `docs/INSTRUCTIONS.md` | 環境の構築手順 |
 
 - `README.md` と `CLAUDE.md` **以外**のドキュメントは `docs/` 配下に置く。
+- **ダイアグラムはすべて mermaid 形式で記述する**（```` ```mermaid ````）。ASCIIアートは使わない。GitHub・claude.ai のどちらでもレンダリングされる構文を用いる。
 
 ## 設計・実装の方針
 
