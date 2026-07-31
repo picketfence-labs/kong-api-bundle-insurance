@@ -1,0 +1,9 @@
+# このファイルを terraform.tfvars にコピーして値を設定してください。
+# PAT は tfvars に書かず、環境変数 TF_VAR_konnect_pat で渡すことを推奨します。
+
+# konnect_pat        = "kpat_xxxxxxxx"   # 非推奨: 環境変数 TF_VAR_konnect_pat を使うこと
+konnect_server_url = "https://us.api.konghq.com"
+control_plane_name = "kong-insurance-demo"
+
+# ローカルで Kong DP を起動しない場合は false にすると証明書生成をスキップします。
+generate_dp_certificate = true

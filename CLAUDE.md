@@ -29,7 +29,7 @@ Kong Gateway Enterprise 3.15 + Kong Konnect を前段に置き、損害保険ド
   商品カテゴリと請求種別の整合など、ドメイン的な矛盾を作らない。
 - **商品ドメイン**: 損害保険会社を想定。生命保険・学資保険は扱わない。
 - **マイナンバーのAPI公開**: 現状は raw（フル桁）で返却。将来、利用者ロールに応じて raw/masked を切り替える。
-- **Konnect / decK**: 最初は Service と Route のみを定義。認証等のプラグインは後日追加。
+- **Konnect / IaC**: Control Plane・Service・Route・DP証明書はすべて **Terraform**（`terraform/`、Kong/konnect provider）で管理する。decK は使用しない。最初は Service と Route のみを定義し、認証等のプラグインは後日 Terraform で追加。
 - **Konnect 反映先**: US リージョン / 組織 `hashi-sandbox` / Control Plane `kong-insurance-demo`。
 
 ## データモデル変更のワークフロー
@@ -40,4 +40,5 @@ Kong Gateway Enterprise 3.15 + Kong Konnect を前段に置き、損害保険ド
 ## 秘匿情報の取り扱い
 
 - `KONNECT_PAT` などのトークンは環境変数で渡す。**リポジトリにコミットしない**。
-- `.env`、`deck/certs/`（DP証明書）は `.gitignore` 済み。`.env.example` のみコミットする。
+- `.env`、`certs/`（DP証明書）、`terraform.tfvars`、`*.tfstate` は `.gitignore` 済み。`.env.example` / `terraform.tfvars.example` のみコミットする。
+- Terraform の PAT は `TF_VAR_konnect_pat` 環境変数で渡す（tfvars に書かない）。

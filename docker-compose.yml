@@ -112,8 +112,8 @@ services:
       KONG_PROXY_ACCESS_LOG: /dev/stdout
       KONG_PROXY_ERROR_LOG: /dev/stderr
     volumes:
-      - ./deck/certs/tls.crt:/run/secrets/tls.crt:ro
-      - ./deck/certs/tls.key:/run/secrets/tls.key:ro
+      - ./certs/tls.crt:/run/secrets/tls.crt:ro
+      - ./certs/tls.key:/run/secrets/tls.key:ro
     ports:
       - "8000:8000"   # proxy (HTTP)
       - "8443:8443"   # proxy (HTTPS)

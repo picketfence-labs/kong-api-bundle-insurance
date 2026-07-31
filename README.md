@@ -40,18 +40,23 @@ curl -X POST http://localhost:8003/simulations \
 
 各サービスの Swagger UI は `http://localhost:<port>/docs` で確認できます。
 
-## Kong Konnect 連携
+## Kong Konnect 連携（Terraform）
 
-Service / Route の宣言的設定は [deck/kong.yaml](deck/kong.yaml) にあり、decK で Konnect に反映します。
-現時点では **Service と Route のみ**（認証等のプラグインは今後追加）。
+Konnect の **Control Plane・Service・Route・Data Plane 証明書** はすべて Terraform で管理します
+（[terraform/](terraform/)）。現時点では **Service と Route のみ**（認証等のプラグインは今後追加）。
 
 ```bash
-export KONNECT_PAT=<Konnect Personal Access Token>
-deck gateway sync deck/kong.yaml \
-  --konnect-token "$KONNECT_PAT" \
-  --konnect-addr https://us.api.konghq.com \
-  --konnect-control-plane-name kong-insurance-demo
+cd terraform
+export TF_VAR_konnect_pat=<Konnect Personal Access Token>
+terraform init
+terraform apply
 ```
+
+`terraform apply` により以下が作成されます:
+
+- Control Plane `kong-insurance-demo`
+- 6つの Service と Route（`/product` 〜 `/claim`）
+- Kong Data Plane 接続用の自己署名証明書（`certs/` に出力し、Konnect に登録）
 
 Kong Gateway (Data Plane) を Konnect に接続してプロキシ経由でアクセスする手順は
 [docs/INSTRUCTIONS.md](docs/INSTRUCTIONS.md) を参照してください。
@@ -67,7 +72,7 @@ Kong Gateway (Data Plane) を Konnect に接続してプロキシ経由でアク
 
 - **バックエンド**: Python 3.13 / FastAPI（OpenAPI 3.1 を自動生成）
 - **API Gateway**: Kong Gateway Enterprise 3.15（Konnect Hybrid mode / Data Plane）
-- **宣言的管理**: decK
+- **IaC / 宣言的管理**: Terraform（Kong/konnect provider で Control Plane・Service・Route・DP証明書を管理）
 - **実行環境**: Docker Compose（ローカル）→ AWS ECS（後工程）
 
 ## ディレクトリ構成
@@ -76,9 +81,9 @@ Kong Gateway (Data Plane) を Konnect に接続してプロキシ経由でアク
 .
 ├── common/                # 全サービス共通モジュール（日本フォーマット・商品定義・保険料計算・ストア）
 ├── services/              # 6サービスのFastAPI実装（各 app/ + 共通 Dockerfile）
-├── scripts/               # テストデータ生成・OpenAPI書き出し・Konnect DP接続
+├── scripts/               # テストデータ生成・OpenAPI書き出し
 ├── data/seed/             # 生成されたテストデータ（JSON）
-├── deck/                  # Kong 宣言的設定（decK）
+├── terraform/             # Konnect の IaC（Control Plane・Service・Route・DP証明書）
 ├── docs/                  # ドキュメント
 └── docker-compose.yml
 ```

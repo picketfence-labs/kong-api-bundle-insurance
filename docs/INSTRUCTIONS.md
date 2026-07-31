@@ -4,7 +4,7 @@
 
 - Docker / Docker Compose v2
 - Python 3.11+（テストデータ生成・OpenAPI書き出し用。3.13 で確認済み）
-- [decK](https://docs.konghq.com/deck/) v1.53+（Konnect 連携）
+- [Terraform](https://developer.hashicorp.com/terraform) v1.5+（Konnect 連携）
 - Kong Konnect アカウントと Personal Access Token（PAT）
 
 ---
@@ -71,28 +71,34 @@ python3 scripts/export_openapi.py
 
 ---
 
-## 4. Kong Konnect への反映（decK）
+## 4. Kong Konnect の構築（Terraform）
 
-Service / Route の宣言的設定を Konnect に反映します（現状プラグインなし）。
+Control Plane・Service・Route・Data Plane 証明書をすべて Terraform で構築します
+（現状プラグインなし）。
 
 ```bash
-export KONNECT_PAT=<Konnect Personal Access Token>
+cd terraform
 
-# 事前確認(差分表示)
-deck gateway diff deck/kong.yaml \
-  --konnect-token "$KONNECT_PAT" \
-  --konnect-addr https://us.api.konghq.com \
-  --konnect-control-plane-name kong-insurance-demo
+# PAT は環境変数で渡す(tfvars には書かない)
+export TF_VAR_konnect_pat=<Konnect Personal Access Token>
 
-# 反映
-deck gateway sync deck/kong.yaml \
-  --konnect-token "$KONNECT_PAT" \
-  --konnect-addr https://us.api.konghq.com \
-  --konnect-control-plane-name kong-insurance-demo
+terraform init
+terraform plan     # 事前確認
+terraform apply    # 反映
 ```
 
-> リージョンが us 以外の場合は `--konnect-addr` を `https://eu.api.konghq.com` などに変更します。
-> Control Plane が未作成の場合は Konnect UI か API で作成してください（本デモでは `kong-insurance-demo` を使用）。
+`terraform apply` で以下が作成されます:
+
+- Control Plane `kong-insurance-demo`
+- 6つの Service と Route（`/product` 〜 `/claim`）
+- Kong Data Plane 接続用の自己署名証明書（`certs/tls.crt` / `tls.key` に出力し、Konnect に登録）
+
+> リージョンが us 以外の場合は変数 `konnect_server_url` を `https://eu.api.konghq.com` などに
+> 変更します（`terraform.tfvars` または `-var` で指定）。
+> `terraform.tfvars.example` をコピーして `terraform.tfvars` を作成できます。
+
+設定変更（Service/Route の追加・変更など）は `.tf` を編集して再度 `terraform apply` するだけです。
+削除は `terraform destroy` で Control Plane ごと消えます。
 
 ---
 
@@ -101,20 +107,24 @@ deck gateway sync deck/kong.yaml \
 Konnect の Control Plane に接続する Data Plane をローカルで起動し、プロキシ経由で
 各サービスにアクセスします。
 
-### 5-1. DP 証明書の生成と登録
+### 5-1. 接続情報を .env に設定
+
+Terraform の出力から DP 起動用の接続情報を取得し、`.env` に記載します
+（`.env.example` をコピーして編集）。証明書は手順4で `certs/` に生成済みです。
 
 ```bash
-export KONNECT_PAT=<Konnect Personal Access Token>
-./scripts/setup_konnect_dp.sh
+cd terraform
+terraform output dp_env    # KONNECT_CP_ENDPOINT などが出力される
 ```
 
-このスクリプトは以下を行います:
+出力例を `.env` に貼り付けます:
 
-1. `deck/certs/tls.crt` / `tls.key` を生成（`deck/certs/` は .gitignore 済み）
-2. 証明書を Konnect の Control Plane に data-plane client cert として登録
-3. `.env` に記載すべき接続情報（CP/TP エンドポイント）を出力
-
-出力された値を `.env` に記載します（`.env.example` をコピーして編集）。
+```
+KONNECT_CP_ENDPOINT=xxxxxxxxxx.us.cp.konghq.com:443
+KONNECT_CP_SERVER_NAME=xxxxxxxxxx.us.cp.konghq.com
+KONNECT_TP_ENDPOINT=xxxxxxxxxx.us.tp.konghq.com:443
+KONNECT_TP_SERVER_NAME=xxxxxxxxxx.us.tp.konghq.com
+```
 
 ### 5-2. DP の起動
 
@@ -149,6 +159,6 @@ hybrid 接続する構成を想定しています。詳細は別途本節に追�
 | 症状 | 対処 |
 |---|---|
 | `docker compose up` でポート競合 | 既存プロセスが 8000〜8006 を使用中。`lsof -iTCP:<port>` で確認し、`docker-compose.override.yml` でポート変更 |
-| decK sync で `control plane not found` | `--konnect-control-plane-name` と `--konnect-addr`(リージョン) を確認 |
-| DP が Konnect に接続できない | `.env` の CP/TP エンドポイントと、証明書が Konnect に登録済みか確認（`scripts/setup_konnect_dp.sh` を再実行） |
+| terraform apply で認証エラー | 環境変数 `TF_VAR_konnect_pat` と、リージョン(`konnect_server_url`) を確認 |
+| DP が Konnect に接続できない | `.env` の CP/TP エンドポイント(`terraform output dp_env`)と、`certs/` に証明書が生成済みか確認 |
 | サービスが 500 を返す | `data/seed/*.json` が生成済みか確認（手順1）。コンテナ内では `SEED_FILE` を参照 |

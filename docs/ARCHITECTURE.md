@@ -25,7 +25,7 @@
         └── data/seed/*.json をメモリにロードしてCRUD ──────┘
 ```
 
-- **Kong Konnect** が Control Plane。Service / Route の宣言的設定を decK で反映する。
+- **Kong Konnect** が Control Plane。Control Plane 自体・Service / Route・DP証明書を Terraform で構築する。
 - **Kong Gateway (Data Plane)** は hybrid mode で Konnect に接続し、設定を受け取ってプロキシに徹する（ローカルDBを持たない）。
 - **6サービス** はいずれも FastAPI 製。ローカルでは同一 Docker ネットワーク内でサービス名解決され、DP からプロキシされる。
 
@@ -33,10 +33,10 @@
 
 | 項目 | 選定 | 理由 |
 |---|---|---|
-| 実装言語 | Python 3.13 / FastAPI | OpenAPI 3.1 を自動生成でき、Konnect へのスペック登録・decK 連携と相性が良い。CRUDデモの実装速度も速い |
+| 実装言語 | Python 3.13 / FastAPI | OpenAPI 3.1 を自動生成でき、Konnect へのスペック登録と相性が良い。CRUDデモの実装速度も速い |
 | データ保持 | 起動時に JSON をメモリロード | デモ用途。DBを立てずに整合性の取れた固定データを提供でき、再起動でシードにリセットされる |
 | Gateway | Kong Gateway Enterprise 3.15 (hybrid) | 要件。Konnect の Control Plane と接続する Data Plane として動作 |
-| 宣言的管理 | decK | Service/Route をコードで管理し、Konnect に冪等に反映 |
+| IaC / 宣言的管理 | Terraform (Kong/konnect provider) | Control Plane・Service・Route・DP証明書をコードで管理し、Konnect に冪等に反映。CP構築自体もTerraformで完結 |
 
 ## データモデルとサービス間整合性
 
@@ -83,6 +83,6 @@ DP は `--profile konnect` を付けたときのみ起動する（Konnect 接続
 
 ## 今後の拡張
 
-- **認証プラグイン**: 現状は Service/Route のみ。key-auth / OIDC / rate-limiting 等を decK に追加予定。
+- **認証プラグイン**: 現状は Service/Route のみ。key-auth / OIDC / rate-limiting 等を Terraform (`konnect_gateway_plugin`) で追加予定。
 - **マイナンバーのマスキング**: 利用者ロールに応じた raw/masked 切り替え（現状は raw 返却）。
 - **AWS ECS 対応**: 各サービスを ECS タスクとして稼働、DP も ECS 上で hybrid 接続する構成を後工程で追加。
