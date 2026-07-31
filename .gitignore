@@ -5,13 +5,12 @@ __pycache__/
 docker-compose.override.yml
 .claude/settings.local.json
 
-# DP証明書・鍵(Terraformが certs/ に生成。旧 deck/certs も除外)
+# DP証明書・鍵(Terraformが certs/ に生成)
 certs/
-deck/certs/
 
 # Terraform (.terraform.lock.hcl は意図的にコミットする)
-terraform/.terraform/
+**/.terraform/
 *.tfstate
 *.tfstate.*
-terraform/terraform.tfvars
+**/terraform.tfvars
 crash.log

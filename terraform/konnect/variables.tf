@@ -29,7 +29,7 @@ variable "generate_dp_certificate" {
 }
 
 variable "dp_cert_output_dir" {
-  description = "生成した DP 証明書・鍵の出力先ディレクトリ(リポジトリルートからの相対)。"
+  description = "生成した DP 証明書・鍵の出力先ディレクトリ(モジュールからの相対。既定はリポジトリルートの certs/)。"
   type        = string
-  default     = "../certs"
+  default     = "../../certs"
 }

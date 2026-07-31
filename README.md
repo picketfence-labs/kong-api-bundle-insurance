@@ -43,10 +43,10 @@ curl -X POST http://localhost:8003/simulations \
 ## Kong Konnect 連携（Terraform）
 
 Konnect の **Control Plane・Service・Route・Data Plane 証明書** はすべて Terraform で管理します
-（[terraform/](terraform/)）。現時点では **Service と Route のみ**（認証等のプラグインは今後追加）。
+（[terraform/konnect/](terraform/konnect/)）。現時点では **Service と Route のみ**（認証等のプラグインは今後追加）。
 
 ```bash
-cd terraform
+cd terraform/konnect
 export TF_VAR_konnect_pat=<Konnect Personal Access Token>
 terraform init
 terraform apply
@@ -56,10 +56,17 @@ terraform apply
 
 - Control Plane `kong-insurance-demo`
 - 6つの Service と Route（`/product` 〜 `/claim`）
-- Kong Data Plane 接続用の自己署名証明書（`certs/` に出力し、Konnect に登録）
+- Kong Data Plane 接続用の自己署名証明書（リポジトリルートの `certs/` に出力し、Konnect に登録）
 
-Kong Gateway (Data Plane) を Konnect に接続してプロキシ経由でアクセスする手順は
-[docs/INSTRUCTIONS.md](docs/INSTRUCTIONS.md) を参照してください。
+## デプロイ方式（Docker Compose / AWS ECS）
+
+同じ6サービス + Kong DP を、**2通りの方式**で動かせます（どちらかが本番専用ということはなく、
+選択できるサンプルです）:
+
+- **Docker Compose** — 上記クイックスタート、および `docker compose --profile konnect up` で DP も起動
+- **AWS ECS (Fargate)** — [terraform/ecs/](terraform/ecs/) で VPC・ECS・ALB・DP を構築、`scripts/build_push_ecr.sh` でイメージを push
+
+いずれも詳細な手順は [docs/INSTRUCTIONS.md](docs/INSTRUCTIONS.md) を参照してください。
 
 ## ドキュメント
 
@@ -81,11 +88,13 @@ Kong Gateway (Data Plane) を Konnect に接続してプロキシ経由でアク
 .
 ├── common/                # 全サービス共通モジュール（日本フォーマット・商品定義・保険料計算・ストア）
 ├── services/              # 6サービスのFastAPI実装（各 app/ + 共通 Dockerfile）
-├── scripts/               # テストデータ生成・OpenAPI書き出し
+├── scripts/               # テストデータ生成・OpenAPI書き出し・ECRビルド/push
 ├── data/seed/             # 生成されたテストデータ（JSON）
-├── terraform/             # Konnect の IaC（Control Plane・Service・Route・DP証明書）
+├── terraform/
+│   ├── konnect/           # Konnect の IaC（Control Plane・Service・Route・DP証明書）
+│   └── ecs/               # AWS ECS の IaC（VPC・ECS・ALB・Kong DP）
 ├── docs/                  # ドキュメント
-└── docker-compose.yml
+└── docker-compose.yml     # Docker Compose 方式
 ```
 
 ## ライセンス / 注意事項

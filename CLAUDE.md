@@ -30,7 +30,8 @@ Kong Gateway Enterprise 3.15 + Kong Konnect を前段に置き、損害保険ド
   商品カテゴリと請求種別の整合など、ドメイン的な矛盾を作らない。
 - **商品ドメイン**: 損害保険会社を想定。生命保険・学資保険は扱わない。
 - **マイナンバーのAPI公開**: 現状は raw（フル桁）で返却。将来、利用者ロールに応じて raw/masked を切り替える。
-- **Konnect / IaC**: Control Plane・Service・Route・DP証明書はすべて **Terraform**（`terraform/`、Kong/konnect provider）で管理する。decK は使用しない。最初は Service と Route のみを定義し、認証等のプラグインは後日 Terraform で追加。
+- **Konnect / IaC**: Control Plane・Service・Route・DP証明書はすべて **Terraform**（`terraform/konnect/`、Kong/konnect provider）で管理する。decK は使用しない。最初は Service と Route のみを定義し、認証等のプラグインは後日 Terraform で追加。
+- **デプロイ方式**: Docker Compose（`docker-compose.yml`）と AWS ECS（`terraform/ecs/`）の2通りを、どちらも選択可能なサンプルとして維持する。片方をローカル専用/本番専用と位置づけない。ECS はサービス間解決に Service Connect を用い、Kong の Service host（`product` 等）と一致させる。
 - **Konnect 反映先**: US リージョン / 組織 `hashi-sandbox` / Control Plane `kong-insurance-demo`。
 
 ## データモデル変更のワークフロー

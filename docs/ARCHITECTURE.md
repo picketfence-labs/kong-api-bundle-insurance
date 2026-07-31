@@ -95,8 +95,32 @@ CRUD5サービス（product/customer/application/policy/claim）は同一構造:
 
 DP は `--profile konnect` を付けたときのみ起動する（Konnect 接続情報が必要なため）。
 
+## デプロイ方式
+
+同じ6サービス + Kong DP を、2通りの方式で動かせる（どちらも選択可能なサンプル。片方が
+ローカル専用/本番専用という位置づけではない）。手順は [INSTRUCTIONS.md](INSTRUCTIONS.md) を参照。
+
+| | Docker Compose | AWS ECS (Fargate) |
+|---|---|---|
+| 定義 | `docker-compose.yml` | `terraform/ecs/` |
+| サービス間解決 | Docker ネットワークのサービス名 | ECS Service Connect（discovery name = サービス名） |
+| 公開 | ローカルポート / DP プロキシ(8000) | ALB → Kong DP → 各サービス |
+| イメージ | ローカルビルド | ECR（`scripts/build_push_ecr.sh`） |
+| DP 証明書 | `certs/` をボリュームマウント | Secrets Manager 経由で注入 |
+
+どちらの方式でも、Kong の Service host（`product` 等）が同じ名前で解決される点が共通しており、
+Konnect 側の Service/Route 定義（`terraform/konnect/`）を両方式で共有できる。
+
+### AWS ECS 構成（`terraform/ecs/`）
+
+- **VPC**: パブリックサブネット×2AZ。コスト最小化のため NAT Gateway は使わず、タスクにパブリックIPを付与して ECR/Konnect へアウトバウンド（受信はセキュリティグループで制限）。
+- **ECS/Fargate**: 6バックエンドサービス + Kong DP を各 ECS Service として起動。
+- **Service Connect**: バックエンドを discovery name（`product` 等）で公開し、Kong DP がクライアントとして `http://product:8000` で到達。
+- **ALB**: Kong DP のプロキシポート(8000)を公開する入口。
+- **Konnect 連携**: CP/TP エンドポイントは `terraform/konnect` の state を `terraform_remote_state` で参照。DP 証明書は `certs/` を Secrets Manager に格納して注入。
+
 ## 今後の拡張
 
 - **認証プラグイン**: 現状は Service/Route のみ。key-auth / OIDC / rate-limiting 等を Terraform (`konnect_gateway_plugin`) で追加予定。
 - **マイナンバーのマスキング**: 利用者ロールに応じた raw/masked 切り替え（現状は raw 返却）。
-- **AWS ECS 対応**: 各サービスを ECS タスクとして稼働、DP も ECS 上で hybrid 接続する構成を後工程で追加。
+- **ECS のプライベート化**: 現状はコスト優先でパブリックサブネット構成。NAT Gateway + プライベートサブネット + VPC エンドポイントへの変更余地あり。
