@@ -1,0 +1,439 @@
+openapi: 3.1.0
+info:
+  title: 商品サービス (Product Service)
+  description: 損害保険商品マスタを提供するAPI。火災・自動車・傷害・医療・ペットの各保険商品を管理します。
+  version: 1.0.0
+paths:
+  /health:
+    get:
+      tags:
+      - health
+      summary: ヘルスチェック
+      operationId: health_health_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /products:
+    get:
+      tags:
+      - products
+      summary: 商品一覧の取得
+      operationId: list_products_products_get
+      parameters:
+      - name: category
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: 商品カテゴリで絞り込み
+          title: Category
+        description: 商品カテゴリで絞り込み
+      - name: status
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: 販売状況で絞り込み
+          title: Status
+        description: 販売状況で絞り込み
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 50
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductList'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - products
+      summary: 商品の新規登録
+      operationId: create_product_products_post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductBase'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /products/{product_id}:
+    get:
+      tags:
+      - products
+      summary: 商品の取得
+      operationId: get_product_products__product_id__get
+      parameters:
+      - name: product_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Product Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - products
+      summary: 商品の更新
+      operationId: update_product_products__product_id__put
+      parameters:
+      - name: product_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Product Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductBase'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - products
+      summary: 商品の削除
+      operationId: delete_product_products__product_id__delete
+      parameters:
+      - name: product_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Product Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+components:
+  schemas:
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    PremiumRateTable:
+      properties:
+        annual_rate_on_sum_insured:
+          type: number
+          title: Annual Rate On Sum Insured
+          description: 保険金額に対する年間保険料率
+        annual_base_premium:
+          type: integer
+          title: Annual Base Premium
+          description: 年間ベース保険料(円)
+        note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Note
+          description: 補足
+      type: object
+      required:
+      - annual_rate_on_sum_insured
+      - annual_base_premium
+      title: PremiumRateTable
+    Product:
+      properties:
+        product_code:
+          type: string
+          title: Product Code
+          description: 社内商品コード
+          examples:
+          - FIRE-STD
+        product_name:
+          type: string
+          title: Product Name
+          description: 商品名(愛称含む)
+          examples:
+          - 火災保険「住まいの安心」
+        category:
+          type: string
+          title: Category
+          description: 商品カテゴリ
+          examples:
+          - 火災保険
+        description:
+          type: string
+          title: Description
+          description: 商品説明文
+        coverage_summary:
+          type: string
+          title: Coverage Summary
+          description: 主契約の保障内容概要
+        min_age:
+          type: integer
+          title: Min Age
+          description: 加入可能な最低年齢
+          examples:
+          - 18
+        max_age:
+          type: integer
+          title: Max Age
+          description: 加入可能な最高年齢
+          examples:
+          - 99
+        policy_term:
+          type: string
+          title: Policy Term
+          description: 保険期間
+          examples:
+          - 1〜5年
+        min_sum_insured:
+          type: integer
+          title: Min Sum Insured
+          description: 保険金額の下限(円)
+        max_sum_insured:
+          type: integer
+          title: Max Sum Insured
+          description: 保険金額の上限(円)
+        premium_rate_table:
+          $ref: '#/components/schemas/PremiumRateTable'
+          description: 保険料算出係数
+        riders:
+          items:
+            type: string
+          type: array
+          title: Riders
+          description: 付帯可能な特約一覧
+        status:
+          type: string
+          title: Status
+          description: 販売状況
+          examples:
+          - 販売中
+        product_id:
+          type: string
+          title: Product Id
+          description: 商品ID(PRD-NNN)
+          examples:
+          - PRD-001
+        created_at:
+          type: string
+          title: Created At
+        updated_at:
+          type: string
+          title: Updated At
+      type: object
+      required:
+      - product_code
+      - product_name
+      - category
+      - description
+      - coverage_summary
+      - min_age
+      - max_age
+      - policy_term
+      - min_sum_insured
+      - max_sum_insured
+      - premium_rate_table
+      - status
+      - product_id
+      - created_at
+      - updated_at
+      title: Product
+    ProductBase:
+      properties:
+        product_code:
+          type: string
+          title: Product Code
+          description: 社内商品コード
+          examples:
+          - FIRE-STD
+        product_name:
+          type: string
+          title: Product Name
+          description: 商品名(愛称含む)
+          examples:
+          - 火災保険「住まいの安心」
+        category:
+          type: string
+          title: Category
+          description: 商品カテゴリ
+          examples:
+          - 火災保険
+        description:
+          type: string
+          title: Description
+          description: 商品説明文
+        coverage_summary:
+          type: string
+          title: Coverage Summary
+          description: 主契約の保障内容概要
+        min_age:
+          type: integer
+          title: Min Age
+          description: 加入可能な最低年齢
+          examples:
+          - 18
+        max_age:
+          type: integer
+          title: Max Age
+          description: 加入可能な最高年齢
+          examples:
+          - 99
+        policy_term:
+          type: string
+          title: Policy Term
+          description: 保険期間
+          examples:
+          - 1〜5年
+        min_sum_insured:
+          type: integer
+          title: Min Sum Insured
+          description: 保険金額の下限(円)
+        max_sum_insured:
+          type: integer
+          title: Max Sum Insured
+          description: 保険金額の上限(円)
+        premium_rate_table:
+          $ref: '#/components/schemas/PremiumRateTable'
+          description: 保険料算出係数
+        riders:
+          items:
+            type: string
+          type: array
+          title: Riders
+          description: 付帯可能な特約一覧
+        status:
+          type: string
+          title: Status
+          description: 販売状況
+          examples:
+          - 販売中
+      type: object
+      required:
+      - product_code
+      - product_name
+      - category
+      - description
+      - coverage_summary
+      - min_age
+      - max_age
+      - policy_term
+      - min_sum_insured
+      - max_sum_insured
+      - premium_rate_table
+      - status
+      title: ProductBase
+    ProductList:
+      properties:
+        total:
+          type: integer
+          title: Total
+        items:
+          items:
+            $ref: '#/components/schemas/Product'
+          type: array
+          title: Items
+      type: object
+      required:
+      - total
+      - items
+      title: ProductList
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+tags:
+- name: products
+  description: 商品マスタの参照・管理
+servers:
+- url: https://api.example.com/product
+  description: Kong Gateway 経由(本番想定)

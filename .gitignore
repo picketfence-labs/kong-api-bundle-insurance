@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+deck/certs/
+docker-compose.override.yml
+.claude/settings.local.json

@@ -1,0 +1,534 @@
+openapi: 3.1.0
+info:
+  title: 顧客サービス (Customer Service)
+  description: '個人顧客マスタを提供するAPI。氏名・住所・連絡先・マイナンバー・口座情報を管理します。
+
+
+    **マイナンバーの扱い:** 現バージョンでは`my_number`をフル桁でそのまま返却します。将来的に利用者の権限(ロール)に応じてraw/maskedを切り替える予定です。'
+  version: 1.0.0
+paths:
+  /health:
+    get:
+      tags:
+      - health
+      summary: ヘルスチェック
+      operationId: health_health_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /customers:
+    get:
+      tags:
+      - customers
+      summary: 顧客一覧の取得
+      operationId: list_customers_customers_get
+      parameters:
+      - name: prefecture
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: 都道府県で絞り込み
+          title: Prefecture
+        description: 都道府県で絞り込み
+      - name: gender
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: 性別で絞り込み
+          title: Gender
+        description: 性別で絞り込み
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 50
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerList'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - customers
+      summary: 顧客の新規登録
+      operationId: create_customer_customers_post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerBase'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /customers/{customer_id}:
+    get:
+      tags:
+      - customers
+      summary: 顧客の取得
+      operationId: get_customer_customers__customer_id__get
+      parameters:
+      - name: customer_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Customer Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - customers
+      summary: 顧客の更新
+      operationId: update_customer_customers__customer_id__put
+      parameters:
+      - name: customer_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Customer Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerBase'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - customers
+      summary: 顧客の削除
+      operationId: delete_customer_customers__customer_id__delete
+      parameters:
+      - name: customer_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Customer Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+components:
+  schemas:
+    BankAccount:
+      properties:
+        bank_name:
+          type: string
+          title: Bank Name
+          description: 銀行名
+          examples:
+          - みずほ銀行
+        branch_name:
+          type: string
+          title: Branch Name
+          description: 支店名
+          examples:
+          - 渋谷支店
+        account_type:
+          type: string
+          title: Account Type
+          description: 預金種別
+          examples:
+          - 普通
+        account_number:
+          type: string
+          title: Account Number
+          description: 口座番号(7桁)
+          examples:
+          - '1234567'
+      type: object
+      required:
+      - bank_name
+      - branch_name
+      - account_type
+      - account_number
+      title: BankAccount
+    Customer:
+      properties:
+        last_name:
+          type: string
+          title: Last Name
+          description: 姓
+          examples:
+          - 山田
+        first_name:
+          type: string
+          title: First Name
+          description: 名
+          examples:
+          - 太郎
+        last_name_kana:
+          type: string
+          title: Last Name Kana
+          description: 姓(全角カナ)
+          examples:
+          - ヤマダ
+        first_name_kana:
+          type: string
+          title: First Name Kana
+          description: 名(全角カナ)
+          examples:
+          - タロウ
+        birth_date:
+          type: string
+          title: Birth Date
+          description: 生年月日(YYYY-MM-DD)
+          examples:
+          - '1985-04-12'
+        gender:
+          type: string
+          title: Gender
+          description: 性別
+          examples:
+          - 男性
+        my_number:
+          type: string
+          title: My Number
+          description: マイナンバー(12桁・ダミー)
+          examples:
+          - '123456789018'
+        postal_code:
+          type: string
+          title: Postal Code
+          description: 郵便番号(NNN-NNNN)
+          examples:
+          - 150-0002
+        prefecture:
+          type: string
+          title: Prefecture
+          description: 都道府県
+          examples:
+          - 東京都
+        city:
+          type: string
+          title: City
+          description: 市区町村
+          examples:
+          - 渋谷区
+        address_line:
+          type: string
+          title: Address Line
+          description: 番地・建物名
+          examples:
+          - 1-2-3 パークタワー
+        phone_number:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Phone Number
+          description: 固定電話番号
+        mobile_number:
+          type: string
+          title: Mobile Number
+          description: 携帯電話番号
+          examples:
+          - 090-1234-5678
+        email:
+          type: string
+          title: Email
+          description: メールアドレス
+          examples:
+          - taro@example.com
+        occupation:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Occupation
+          description: 職業
+        annual_income:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Annual Income
+          description: 年収(円)
+        bank_account:
+          anyOf:
+          - $ref: '#/components/schemas/BankAccount'
+          - type: 'null'
+          description: 口座情報
+        customer_since:
+          type: string
+          title: Customer Since
+          description: 顧客登録日(YYYY-MM-DD)
+        customer_id:
+          type: string
+          title: Customer Id
+          description: 顧客ID(CUS-NNNNNN)
+          examples:
+          - CUS-000001
+        created_at:
+          type: string
+          title: Created At
+        updated_at:
+          type: string
+          title: Updated At
+      type: object
+      required:
+      - last_name
+      - first_name
+      - last_name_kana
+      - first_name_kana
+      - birth_date
+      - gender
+      - my_number
+      - postal_code
+      - prefecture
+      - city
+      - address_line
+      - mobile_number
+      - email
+      - customer_since
+      - customer_id
+      - created_at
+      - updated_at
+      title: Customer
+    CustomerBase:
+      properties:
+        last_name:
+          type: string
+          title: Last Name
+          description: 姓
+          examples:
+          - 山田
+        first_name:
+          type: string
+          title: First Name
+          description: 名
+          examples:
+          - 太郎
+        last_name_kana:
+          type: string
+          title: Last Name Kana
+          description: 姓(全角カナ)
+          examples:
+          - ヤマダ
+        first_name_kana:
+          type: string
+          title: First Name Kana
+          description: 名(全角カナ)
+          examples:
+          - タロウ
+        birth_date:
+          type: string
+          title: Birth Date
+          description: 生年月日(YYYY-MM-DD)
+          examples:
+          - '1985-04-12'
+        gender:
+          type: string
+          title: Gender
+          description: 性別
+          examples:
+          - 男性
+        my_number:
+          type: string
+          title: My Number
+          description: マイナンバー(12桁・ダミー)
+          examples:
+          - '123456789018'
+        postal_code:
+          type: string
+          title: Postal Code
+          description: 郵便番号(NNN-NNNN)
+          examples:
+          - 150-0002
+        prefecture:
+          type: string
+          title: Prefecture
+          description: 都道府県
+          examples:
+          - 東京都
+        city:
+          type: string
+          title: City
+          description: 市区町村
+          examples:
+          - 渋谷区
+        address_line:
+          type: string
+          title: Address Line
+          description: 番地・建物名
+          examples:
+          - 1-2-3 パークタワー
+        phone_number:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Phone Number
+          description: 固定電話番号
+        mobile_number:
+          type: string
+          title: Mobile Number
+          description: 携帯電話番号
+          examples:
+          - 090-1234-5678
+        email:
+          type: string
+          title: Email
+          description: メールアドレス
+          examples:
+          - taro@example.com
+        occupation:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Occupation
+          description: 職業
+        annual_income:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Annual Income
+          description: 年収(円)
+        bank_account:
+          anyOf:
+          - $ref: '#/components/schemas/BankAccount'
+          - type: 'null'
+          description: 口座情報
+        customer_since:
+          type: string
+          title: Customer Since
+          description: 顧客登録日(YYYY-MM-DD)
+      type: object
+      required:
+      - last_name
+      - first_name
+      - last_name_kana
+      - first_name_kana
+      - birth_date
+      - gender
+      - my_number
+      - postal_code
+      - prefecture
+      - city
+      - address_line
+      - mobile_number
+      - email
+      - customer_since
+      title: CustomerBase
+    CustomerList:
+      properties:
+        total:
+          type: integer
+          title: Total
+        items:
+          items:
+            $ref: '#/components/schemas/Customer'
+          type: array
+          title: Items
+      type: object
+      required:
+      - total
+      - items
+      title: CustomerList
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+tags:
+- name: customers
+  description: 顧客マスタの参照・管理
+servers:
+- url: https://api.example.com/customer
+  description: Kong Gateway 経由(本番想定)
