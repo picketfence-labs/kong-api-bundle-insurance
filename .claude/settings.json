@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Read", "Glob", "Grep",
+      "Bash(git status:*)", "Bash(git diff:*)", "Bash(git log:*)",
+      "Bash(git checkout:*)", "Bash(git switch:*)",
+      "Bash(docker build:*)", "Bash(docker images:*)", "Bash(docker --version)",
+      "Bash(terraform -chdir=terraform/konnect init:*)",
+      "Bash(terraform -chdir=terraform/konnect plan:*)",
+      "Bash(terraform -chdir=terraform/konnect validate:*)",
+      "Bash(terraform -chdir=terraform/konnect output:*)",
+      "Bash(terraform -chdir=terraform/konnect fmt:*)",
+      "Bash(kubectl get:*)", "Bash(kubectl describe:*)", "Bash(kubectl explain:*)", "Bash(kubectl logs:*)",
+      "Bash(helm repo:*)", "Bash(helm search:*)", "Bash(helm list:*)",
+      "Bash(minikube status)", "Bash(minikube start:*)"
+    ],
+    "ask": [
+      "Edit(.claude/settings.json)", "Write(.claude/settings.json)",
+      "Edit", "Write",
+      "Bash(git add:*)", "Bash(git commit:*)", "Bash(git push:*)",
+      "Bash(gh pr create:*)", "Bash(gh pr merge:*)",
+      "Bash(docker push:*)",
+      "Bash(terraform -chdir=terraform/konnect apply:*)",
+      "Bash(terraform -chdir=terraform/konnect destroy:*)",
+      "Bash(kubectl apply:*)", "Bash(kubectl delete:*)",
+      "Bash(helm install:*)", "Bash(helm upgrade:*)", "Bash(helm uninstall:*)"
+    ]
+  }
+}
