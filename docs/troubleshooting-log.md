@@ -46,3 +46,16 @@
 - **原因**: `picketfence-labs` Organization全体の`default_workflow_permissions`が`read`のままだった。この設定はリポジトリ単位設定の**上限（ceiling）**として働くため、リポジトリ側の設定変更だけでは解決できず、Organization Owner権限（`admin:org`スコープ）が必要な対応だった
 - **対処・回避方法**: 本リポジトリ側のPRでは対応が完結しないため、Organization管理を担うVaultセッション側にエスカレーションした。2026-09-03、Organization・リポジトリ両方の`default_workflow_permissions`を`write`に変更済み（`can_approve_pull_request_reviews`は[ADR 0005](decisions/0005-changelog-commit-mechanism.md)の`required_approving_review_count: 0`設計を踏まえ不要と判断し`false`のまま維持、PoLP）。**この対応により次回`release.yml`発火時のGHCR push 403は解消される見込みだが、実地確認（実際にGHCR pushが成功しGitHub Releaseが作成されること）はまだ完了していない**。次に`services/`・`common/`等への実質変更を伴うPRをmergeし`release.yml`を実際に発火させた際、本エントリの想定通り解消されているか確認すること
 - **コスト**: N/A（Organization管理者側の対応、本リポジトリでの実装コストは無し）
+
+## 2026-09-03 release.yml実地確認（`workflow_dispatch`手動発火）後 CHANGELOG.md更新PRの自動作成が`can_approve_pull_request_reviews`不足で失敗
+
+- **何を期待していたか**: `release.yml`の最終ステップ（`gh pr create` + `gh pr merge`によるCHANGELOG.md更新PRの自動作成・auto-merge）が成功すること
+- **実際どうだったか**: `workflow_dispatch`での手動発火（初回ブートストラップ、`v0.1.0`）で(1)バージョン算出・GHCR push（6サービス）・GitHub Release作成、(3)GHCRパッケージのpublic可視性設定（best-effort）は成功したが、(2)のPR作成ステップが`GraphQL: GitHub Actions is not permitted to create or approve pull requests (createPullRequest)`で失敗。`chore/changelog-v0.1.0`ブランチはpush済みだがPRは未作成のまま残存した
+- **原因**: 上記エントリ（2026-09-03、Organization workflow write権限）とは別の設定`can_approve_pull_request_reviews`（GitHub UI上は1つのチェックボックス「Allow GitHub Actions to create **and approve** pull requests」）が原因。この設定は「PR承認」だけでなく「PR作成」権限も同じ1つの設定でまとめて制御しており、上記エントリで「[ADR 0005](decisions/0005-changelog-commit-mechanism.md)の`required_approving_review_count: 0`設計により承認機能は不要と判断し`false`のまま維持（PoLP）」としていた判断は、この設定が作成権限も兼ねる点を見落としていた誤りだった。`default_workflow_permissions`と同様、Organization側の同名設定がリポジトリ単位設定の上限（ceiling）になっていた（Organization側も`false`）
+- **対処・回避方法**: Vaultセッション側で`admin:org`スコープを一時取得し、Organization・リポジトリ両方の`can_approve_pull_request_reviews`を`true`に変更済み（2026-09-03）。直後にスコープは取り消し済み。**これにより次回`release.yml`発火時のCHANGELOG.md自動PR作成・auto-mergeは成功する見込みだが、実地確認はまだ完了していない**
+- **残タスク・開発Claudeさんへの確認依頼**: 上記対応時点で残存している`chore/changelog-v0.1.0`ブランチ（コミット済み、CHANGELOG.mdに`v0.1.0`分を追記、`main`からahead 1・behind 0、PR未作成）をどう処理するか、方針を決めていただきたい。
+  - (a) 今すぐ手動で`gh pr create`→mergeし、`v0.1.0`分のCHANGELOG更新を完了させる
+  - (b) このブランチは削除し、次回`services/`等への実質変更を伴うPRがmergeされ`release.yml`が実際に発火するタイミングで、CHANGELOG.md自動PR作成・auto-mergeが正しく機能するか実地確認する
+
+  Vaultセッション側の所感は(a)（今すぐ完了させる方が素直）ですが、次のリリース予定や検証計画を踏まえた判断が必要と考えられるため、開発Claudeさん側で決めていただき、このログに追記する形で記録してください。
+- **コスト**: N/A（Organization管理者側の対応、本リポジトリでの実装コストは無し）
