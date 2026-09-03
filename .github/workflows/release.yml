@@ -11,6 +11,9 @@ on:
       - "common/**"
       - "data/seed/**"
       - "requirements.txt"
+  # services/common等に変更が無いmainマージではpathsフィルタで発火しないため、
+  # 手動発火用のブートストラップ手段としてworkflow_dispatchを追加（要相談の上採用）
+  workflow_dispatch: {}
 
 env:
   REGISTRY: ghcr.io
