@@ -1,0 +1,5 @@
+# CI(.github/workflows/ci.yml)のlintで使用。対象はコンテナ化されるコード(services/, common/)のみ
+# ("ruff check services common" として呼び出す。scripts/配下はCIのlint対象外)。
+# ruffの将来のバージョンでデフォルトのルール選択が変わっても揺れないよう、明示的に固定する。
+[lint]
+select = ["E4", "E7", "E9", "F"]

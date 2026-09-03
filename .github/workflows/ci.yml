@@ -1,0 +1,33 @@
+name: CI
+
+# main向けPRでのlint/build確認。GHCRへのpushは行わない(release.ymlの責務)。
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install ruff==0.16.5
+      # lint対象はコンテナ化されるコード(services/, common/)のみ。ruff.tomlでルール選択を固定
+      - run: ruff check services common
+
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [product, customer, simulation, application, policy, claim]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build ${{ matrix.service }} image (push無し、build確認のみ)
+        run: |
+          docker build -f services/Dockerfile --build-arg SERVICE=${{ matrix.service }} \
+            -t insurance-${{ matrix.service }}:ci .

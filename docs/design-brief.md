@@ -2,7 +2,7 @@
 
 Picketfence Labs Vault（Obsidianの管理ノート）の `Dev Design Brief Template` に沿って作成。本ドキュメントは、既存の6マイクロサービス実装にコンテナ公開・バージョニング・Change Log運用を後付けするための基本設計。着手前にVault側でヒアリング・確定した内容をここに転記している。
 
-> **ステータス**: Harness定義段階（本PR）。実際のコンテナ化実装・CI構築は本PR以降の別タスクで行う。
+> **ステータス**: Harness定義（PR #1）はマージ済み。本ドキュメントは以降、実際のコンテナ化実装・CI構築タスクの設計として参照する。
 
 ## 1. Projectゴール
 既存の6マイクロサービス（product/customer/simulation/application/policy/claim）を、パブリックコンテナレジストリ（GHCR）へバージョン管理・Change Log付きで公開できる状態にし、本リポジトリ以外のデモ・プロジェクトからも参照可能にする。
@@ -42,6 +42,7 @@ flowchart LR
 2. [0002: Change Log方式](decisions/0002-changelog-method.md) — GitHub Release + CHANGELOG.mdの併用
 3. [0003: リリース自動化トリガー](decisions/0003-release-automation-trigger.md) — mainマージ時の自動実行
 4. [0004: コンテナレジストリの選定](decisions/0004-container-registry-choice.md) — GHCR一本化
+5. [0005: 保護されたmainへのバージョン管理ファイル反映方式](decisions/0005-changelog-commit-mechanism.md) — バージョンはgit tagのみから導出（VERSIONファイルは持たない）、CHANGELOG.md更新はbotがPRを自動作成し即auto-merge
 
 ## 4. 技術スタック
 - 既存: Python/FastAPI（6サービス共通）、Docker（`services/Dockerfile`、`SERVICE`ビルド引数で切り替え、既存）
@@ -55,8 +56,8 @@ flowchart LR
 - **外部依存の前提条件確認（着手前）**: publicリポジトリでのbranch protection可否をGitHub公式ドキュメントで確認する（社内の別プロジェクトのprivateリポジトリはGitHub Freeプランで403のため有効化不可だったが、本リポジトリはpublicのため制約が異なる可能性がある。思い込みで「今回も同じ制約」と判断しない）
 
 ## 6. 成果物
-- 本PR（Harness定義）: CLAUDE.md更新、`.claude/settings.json`、`docs/decisions/`（ADR 0001〜0004）、`docs/troubleshooting-log.md`、branch protection（可能な範囲で）、PR/ブランチ運用ドキュメント
-- （後続タスクの成果物）: バージョン管理ファイル（`VERSION`または`CHANGELOG.md`先頭）、GitHub Actionsワークフロー（build・push・Release作成）、GHCR上の6イメージ（初回push）
+- Harness定義PR（PR #1・マージ済み）: CLAUDE.md更新、`.claude/settings.json`、`docs/decisions/`（ADR 0001〜0004）、`docs/troubleshooting-log.md`、branch protection、PR/ブランチ運用ドキュメント
+- 本タスク（コンテナ化・CI実装）の成果物: ADR 0005、`CHANGELOG.md`（初期スケルトン＋以降は自動追記）、`ruff.toml`、GitHub Actionsワークフロー（`.github/workflows/ci.yml`＝PRでのlint/build確認、`.github/workflows/release.yml`＝mainマージ時のバージョン算出・build・push・Release作成・CHANGELOG.md更新PR自動merge）、GHCR上の6イメージ（初回push、`main`への実際のマージ後）
 
 ## 7. 関連する既存知見・参照先の棚卸し
 - コンテナレジストリ・GHCR関連の知見は、この作業がVault側で最初の蓄積対象になる（既存の蒸留済み知見は無し）

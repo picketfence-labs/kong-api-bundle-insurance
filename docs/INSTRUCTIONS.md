@@ -51,6 +51,12 @@ Minikube の Docker デーモン内に直接ビルドし、レジストリ無し
 
 `insurance-{product,customer,simulation,application,policy,claim}:local` が作成されます。
 
+> **補足（本リポジトリ以外からの利用）**: 6サービスのイメージは `main` マージ時に GitHub
+> Actions が自動で `ghcr.io/picketfence-labs/insurance-<service>:<version>`（および
+> `:latest`）としてGHCRへpushする（詳細: [design-brief.md](design-brief.md)）。別のデモ・
+> プロジェクトから直接 `docker pull ghcr.io/picketfence-labs/insurance-product:latest`
+> のように取得することも可能（本手順のようにMinikubeへローカルビルドする必要はない）。
+
 ## 3. Kong Operator と Gateway API の導入（初回のみ）
 
 ```bash
