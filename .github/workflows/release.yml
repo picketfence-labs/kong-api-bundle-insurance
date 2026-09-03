@@ -102,10 +102,14 @@ jobs:
           gh release create "${NEW_TAG}" --title "${NEW_TAG}" --generate-notes
 
       # GHCRパッケージのvisibilityはpushしただけでは自動的にpublicにならない場合がある(ADR 0004)。
-      # GITHUB_TOKENの権限では変更できない可能性があるため、失敗しても以降の処理は止めない
-      # (未対応の場合はpackage設定画面での手動publicizeが必要)。
+      # GitHub Packages管理API(visibility変更含む)はclassic PATのみを認証方式として想定しており、
+      # GITHUB_TOKENでは404になることが判明した(ADR 0006)。write:packagesスコープのみのclassic PAT
+      # を`PACKAGES_PAT`として登録して使用する。未登録の場合は失敗しても以降の処理は止めない
+      # (その場合はpackage設定画面での手動publicizeが必要)。
       - name: Publicize GHCR packages (best-effort)
         continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.PACKAGES_PAT }}
         run: |
           set -euo pipefail
           for svc in ${{ env.SERVICES }}; do
