@@ -14,6 +14,7 @@ Kong Gateway Enterprise 3.15 + Kong Konnect を前段に置き、損害保険ド
 |---|---|
 | `README.md` | リポジトリのREADME。プロジェクト概要と利用方法（ルート直下） |
 | `CLAUDE.md` | 本ファイル。指示・取り決めのまとめ（ルート直下） |
+| `CHANGELOG.md` | バージョンごとの変更履歴（ルート直下）。OSSエコシステムの慣習上ルート直下が期待されるための例外（`git tag`のみを正とし、`main`マージ時にGitHub Actionsが自動追記。詳細: [ADR 0002](docs/decisions/0002-changelog-method.md)/[ADR 0005](docs/decisions/0005-changelog-commit-mechanism.md)） |
 | `docs/DATA.md` | データモデル定義と設計判断の記録 |
 | `docs/ARCHITECTURE.md` | 全体構成・技術的な説明 |
 | `docs/INSTRUCTIONS.md` | 環境の構築手順 |
@@ -21,7 +22,7 @@ Kong Gateway Enterprise 3.15 + Kong Konnect を前段に置き、損害保険ド
 | `docs/decisions/NNNN-*.md` | 複数の妥当な選択肢がある判断ポイントの記録（ADR）。1判断＝1ファイル |
 | `docs/troubleshooting-log.md` | 実装中に想定通りに動かなかったこと（エラー・仕様の相違・プロセスの摩擦等）を漏れなく記録するログ。判断ポイントかどうかに関わらず、その場で追記する |
 
-- `README.md` と `CLAUDE.md` **以外**のドキュメントは `docs/` 配下に置く。
+- `README.md`・`CLAUDE.md`・`CHANGELOG.md`（OSSエコシステムの慣習上の例外）**以外**のドキュメントは `docs/` 配下に置く。
 - **ダイアグラムはすべて mermaid 形式で記述する**（```` ```mermaid ````）。ASCIIアートは使わない。GitHub・claude.ai のどちらでもレンダリングされる構文を用いる。
 
 ## 設計・実装の方針
@@ -34,7 +35,7 @@ Kong Gateway Enterprise 3.15 + Kong Konnect を前段に置き、損害保険ド
 - **商品ドメイン**: 損害保険会社を想定。生命保険・学資保険は扱わない。
 - **マイナンバーのAPI公開**: 現状は raw（フル桁）で返却。将来、利用者ロールに応じて raw/masked を切り替える。
 - **実行基盤**: Kubernetes に一本化（Docker Compose・AWS ECS は廃止）。ローカル検証は Minikube（`imagePullPolicy: IfNotPresent` で Minikube の Docker に直接ビルドしたイメージを参照）。
-- **コンテナ公開・バージョニング方針**: 6サービスのイメージはパブリックレジストリ（GHCR、`ghcr.io/picketfence-labs/insurance-<service>`）へ公開する。バージョンはリポジトリ全体で一括管理し、`main` マージ時に GitHub Actions が自動でパッチバージョンを更新・build・push・GitHub Release 作成（Change Log登録）まで行う。詳細・判断根拠は [docs/design-brief.md](docs/design-brief.md) と対応する ADR（[0001](docs/decisions/0001-versioning-granularity.md) 〜 [0004](docs/decisions/0004-container-registry-choice.md)）を参照。**この節と設計ブリーフの内容が食い違った場合は設計ブリーフ側を正とし、この節を追従修正する**。
+- **コンテナ公開・バージョニング方針**: 6サービスのイメージはパブリックレジストリ（GHCR、`ghcr.io/picketfence-labs/insurance-<service>`）へ公開する。バージョンはリポジトリ全体で一括管理し（`git tag`のみを正とし、`VERSION`ファイルは持たない）、`main` マージ時に GitHub Actions が自動でパッチバージョンを算出・build・push・GitHub Release 作成（Change Log登録）まで行う。`CHANGELOG.md` の更新は bot が自動作成した PR をその場で auto-merge する方式で `main` へ反映する（branch protection 下でも直接 push を発生させないため）。詳細・判断根拠は [docs/design-brief.md](docs/design-brief.md) と対応する ADR（[0001](docs/decisions/0001-versioning-granularity.md) 〜 [0005](docs/decisions/0005-changelog-commit-mechanism.md)）を参照。**この節と設計ブリーフの内容が食い違った場合は設計ブリーフ側を正とし、この節を追従修正する**。
 - **ゲートウェイ管理**: **Kong Operator** を使用（decK は使用しない）。Service/Route は Kong Operator の CRD（`KongService`/`KongRoute`）で定義し、Konnect に同期する。認証等のプラグインは後日 `KongPlugin` CRD で追加。
 - **Konnect / IaC の役割分担**: Control Plane は **Terraform**（`terraform/konnect/`）が作成・所有し、k8s の `KonnectGatewayControlPlane` は `source: Mirror` で ID 参照するのみ。DP クライアント証明書は `KonnectExtension`（provisioning: Automatic）で Operator が自動発行するため Terraform では扱わない。
 - **PAT Secret のラベル**: Kong Operator の Secret キャッシュはラベル `konghq.com/secret=true` で絞り込む。PAT Secret にこのラベルが無いと `Secret not found` になるため必須。

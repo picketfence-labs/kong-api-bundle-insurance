@@ -1,0 +1,146 @@
+name: Release
+
+# main マージ時に自動でバージョンを算出し、6サービスのイメージをGHCRへbuild・push、
+# GitHub Releaseを作成し、CHANGELOG.mdの更新PRを自動merge する。
+# 詳細・判断根拠: docs/design-brief.md, docs/decisions/0001〜0005
+on:
+  push:
+    branches: [main]
+    paths:
+      - "services/**"
+      - "common/**"
+      - "data/seed/**"
+      - "requirements.txt"
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAMESPACE: picketfence-labs
+  SERVICES: product customer simulation application policy claim
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      new_version: ${{ steps.bump.outputs.new_version }}
+      new_tag: ${{ steps.bump.outputs.new_tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # バージョンはgit tag(vX.Y.Z)のみを正とする(VERSIONファイルは持たない、ADR 0005)。
+      # 既存タグが無い場合は0.1.0を初回バージョンとする。
+      - id: bump
+        run: |
+          set -euo pipefail
+          LATEST_TAG="$(git tag --list 'v*' --sort=-v:refname | head -n1 || true)"
+          if [ -z "$LATEST_TAG" ]; then
+            NEW_VERSION="0.1.0"
+          else
+            BASE="${LATEST_TAG#v}"
+            MAJOR="$(echo "$BASE" | cut -d. -f1)"
+            MINOR="$(echo "$BASE" | cut -d. -f2)"
+            PATCH="$(echo "$BASE" | cut -d. -f3)"
+            NEW_VERSION="${MAJOR}.${MINOR}.$((PATCH + 1))"
+          fi
+          echo "new_version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "new_tag=v${NEW_VERSION}" >> "$GITHUB_OUTPUT"
+
+  build-and-push:
+    needs: version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        service: [product, customer, simulation, application, policy, claim]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build & push insurance-${{ matrix.service }}
+        run: |
+          set -euo pipefail
+          IMAGE="ghcr.io/${{ env.IMAGE_NAMESPACE }}/insurance-${{ matrix.service }}"
+          TAG="${{ needs.version.outputs.new_tag }}"
+          docker build -f services/Dockerfile --build-arg SERVICE=${{ matrix.service }} \
+            -t "${IMAGE}:${TAG}" -t "${IMAGE}:latest" .
+          docker push "${IMAGE}:${TAG}"
+          docker push "${IMAGE}:latest"
+
+  release:
+    needs: [version, build-and-push]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      packages: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      NEW_TAG: ${{ needs.version.outputs.new_tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # tag pushはmainブランチへの直接pushではないため、branch protectionの対象外
+      - name: Create & push git tag
+        run: |
+          set -euo pipefail
+          git tag "${NEW_TAG}"
+          git push origin "${NEW_TAG}"
+
+      - name: Create GitHub Release
+        run: |
+          set -euo pipefail
+          gh release create "${NEW_TAG}" --title "${NEW_TAG}" --generate-notes
+
+      # GHCRパッケージのvisibilityはpushしただけでは自動的にpublicにならない場合がある(ADR 0004)。
+      # GITHUB_TOKENの権限では変更できない可能性があるため、失敗しても以降の処理は止めない
+      # (未対応の場合はpackage設定画面での手動publicizeが必要)。
+      - name: Publicize GHCR packages (best-effort)
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          for svc in ${{ env.SERVICES }}; do
+            gh api --method PATCH \
+              "/orgs/${{ env.IMAGE_NAMESPACE }}/packages/container/insurance-${svc}" \
+              -f visibility=public
+          done
+
+      - name: Update CHANGELOG.md via PR (auto-merge)
+        run: |
+          set -euo pipefail
+          NOTES="$(gh release view "${NEW_TAG}" --json body -q .body)"
+          BRANCH="chore/changelog-${NEW_TAG}"
+          git checkout -b "${BRANCH}"
+
+          SECTION_FILE="$(mktemp)"
+          {
+            echo "## [${NEW_TAG}] - $(date +%Y-%m-%d)"
+            echo
+            echo "${NOTES}"
+            echo
+          } > "${SECTION_FILE}"
+
+          awk -v section_file="${SECTION_FILE}" '
+            { print }
+            /<!-- CHANGELOG_INSERT_MARKER/ {
+              while ((getline line < section_file) > 0) print line
+            }
+          ' CHANGELOG.md > CHANGELOG.md.new
+          mv CHANGELOG.md.new CHANGELOG.md
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md
+          git commit -m "docs: CHANGELOG.md に ${NEW_TAG} を追記"
+          git push origin "${BRANCH}"
+
+          gh pr create --base main --head "${BRANCH}" \
+            --title "docs: CHANGELOG.md に ${NEW_TAG} を追記" \
+            --body "Release workflow による自動更新（ADR 0005）。対象は CHANGELOG.md のみ。"
+          gh pr merge "${BRANCH}" --squash --delete-branch
