@@ -39,3 +39,10 @@
 - **実際どうだったか**: `CHANGELOG.md`はOSSエコシステム上ルート直下に置くのが強い慣習（`gh release`のUI・多くのツールがルート直下を前提に参照する）であり、`docs/`配下に置くと慣習から外れる
 - **原因**: PR #1でこの規約を定めた時点では、ルート直下配置が慣習として期待される新規ファイル（`CHANGELOG.md`）が今後追加される想定が無かった
 - **対処・回避方法**: `CHANGELOG.md`をルート直下に配置し、CLAUDE.mdのドキュメント構成表・配置規約に「OSSエコシステムの慣習上の例外」として明記するよう更新した（本タスクの一部として）
+
+## 2026-09-03 コンテナ化・CI実装（PR #2完了後） Organization全体のworkflow write権限が無効化されており、release.ymlのGHCR pushが403になる想定だった
+- **何を期待していたか**: `release.yml`の`build-and-push`ジョブが`permissions: packages: write`を明示宣言しているため、`main`マージ時にGHCRへのdocker pushが成功すること
+- **実際どうだったか**: リポジトリ単位で`gh api --method PUT repos/.../actions/permissions/workflow -f default_workflow_permissions=write`を試みると `409 Conflict: "Write permissions for workflows are disabled by the organization"` で拒否された。ワークフローYAML内で`packages: write`を宣言していても、この状態のままではGITHUB_TOKENは実質read権限のままになり、実行時にGHCR pushが403で失敗する見込みだった（PR #2作成時点ではまだ`services/**`等への実質変更を伴うpushが無く、release.ymlが未発火だったため実地確認はできておらず、PR本文の「未検証・持ち越し」に記載のみだった）
+- **原因**: `picketfence-labs` Organization全体の`default_workflow_permissions`が`read`のままだった。この設定はリポジトリ単位設定の**上限（ceiling）**として働くため、リポジトリ側の設定変更だけでは解決できず、Organization Owner権限（`admin:org`スコープ）が必要な対応だった
+- **対処・回避方法**: 本リポジトリ側のPRでは対応が完結しないため、Organization管理を担うVaultセッション側にエスカレーションした。2026-09-03、Organization・リポジトリ両方の`default_workflow_permissions`を`write`に変更済み（`can_approve_pull_request_reviews`は[ADR 0005](decisions/0005-changelog-commit-mechanism.md)の`required_approving_review_count: 0`設計を踏まえ不要と判断し`false`のまま維持、PoLP）。**この対応により次回`release.yml`発火時のGHCR push 403は解消される見込みだが、実地確認（実際にGHCR pushが成功しGitHub Releaseが作成されること）はまだ完了していない**。次に`services/`・`common/`等への実質変更を伴うPRをmergeし`release.yml`を実際に発火させた際、本エントリの想定通り解消されているか確認すること
+- **コスト**: N/A（Organization管理者側の対応、本リポジトリでの実装コストは無し）
