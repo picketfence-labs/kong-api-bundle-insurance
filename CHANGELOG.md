@@ -6,6 +6,17 @@
 （詳細・判断根拠: [docs/design-brief.md](docs/design-brief.md)、[ADR 0002](docs/decisions/0002-changelog-method.md)、[ADR 0005](docs/decisions/0005-changelog-commit-mechanism.md)）。手動でセクションを追記する場合も、このファイルの直下（マーカーコメントの直後）に追加すること。
 
 <!-- CHANGELOG_INSERT_MARKER: 新しいバージョンのセクションはこの直後に追記される -->
+## [v0.1.1] - 2026-09-03
+
+## What's Changed
+* docs: can_approve_pull_request_reviewsブロッカー解消の記録と残ブランチの方針確認依頼 by @shinichi-hashitani in https://github.com/picketfence-labs/kong-api-bundle-insurance/pull/5
+* docs: CHANGELOG.md に v0.1.0 を追記 by @shinichi-hashitani in https://github.com/picketfence-labs/kong-api-bundle-insurance/pull/6
+* docs: chore/changelog-v0.1.0ブランチの処理方針決定を記録 by @shinichi-hashitani in https://github.com/picketfence-labs/kong-api-bundle-insurance/pull/7
+* fix: GHCRパッケージのpublic可視性変更をclassic PAT経由に変更 by @shinichi-hashitani in https://github.com/picketfence-labs/kong-api-bundle-insurance/pull/8
+
+
+**Full Changelog**: https://github.com/picketfence-labs/kong-api-bundle-insurance/compare/v0.1.0...v0.1.1
+
 ## [v0.1.0] - 2026-09-03
 
 ## What's Changed
