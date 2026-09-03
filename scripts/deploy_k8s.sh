@@ -8,11 +8,14 @@
 #   - 環境変数 KONNECT_PAT に Konnect の Personal Access Token
 #
 # 使い方: ./scripts/deploy_k8s.sh
+#   IMAGE_TAG=v0.1.0 ./scripts/deploy_k8s.sh   # GHCRの特定バージョンをpull(既定)
+#   IMAGE_TAG=local  ./scripts/deploy_k8s.sh   # build_images_minikube.shでのローカルビルドを参照(開発用)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 NS=insurance
+IMAGE_TAG="${IMAGE_TAG:-v0.1.0}"
 
 : "${KONNECT_PAT:?環境変数 KONNECT_PAT を設定してください}"
 
@@ -20,9 +23,9 @@ echo "==> Control Plane ID を Terraform 出力から取得"
 CP_ID="$(terraform -chdir=terraform/konnect output -raw control_plane_id)"
 echo "    CP_ID=$CP_ID"
 
-echo "==> namespace とバックエンド6サービスを適用"
+echo "==> namespace とバックエンド6サービスを適用(イメージタグ: ${IMAGE_TAG})"
 kubectl apply -f k8s/namespace.yaml
-kubectl apply -f k8s/services/services.yaml
+sed "s/__IMAGE_TAG__/${IMAGE_TAG}/g" k8s/services/services.yaml | kubectl apply -f -
 
 echo "==> Konnect PAT の Secret を作成(ラベル konghq.com/secret=true が必須)"
 kubectl -n "$NS" create secret generic konnect-pat \

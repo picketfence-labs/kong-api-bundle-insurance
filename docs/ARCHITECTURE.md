@@ -53,7 +53,7 @@ flowchart TB
 | Gateway | Kong Gateway Enterprise 3.15 (hybrid) | 要件。Konnect の Control Plane と接続する Data Plane として動作 |
 | ゲートウェイ管理 | Kong Operator | Kubernetes ネイティブに DataPlane を管理。`KonnectExtension` で Konnect 接続、`KongService`/`KongRoute` CRD で Service/Route を宣言 |
 | Control Plane の作成 | Terraform (Kong/konnect provider) | CP のライフサイクルは Terraform が所有。k8s からは Mirror で参照 |
-| 実行基盤 | Kubernetes (ローカルは Minikube) | 要件。イメージは Minikube の Docker に直接ビルドしレジストリ不要 |
+| 実行基盤 | Kubernetes (ローカルは Minikube) | 要件。イメージは GHCR(`ghcr.io/picketfence-labs/insurance-<service>`)からpull（ADR 0007） |
 
 ## データモデルとサービス間整合性
 
@@ -88,7 +88,7 @@ CRUD5サービス（product/customer/application/policy/claim）は同一構造:
 - 全サービスが単一の `services/Dockerfile` を共有し、ビルド引数 `SERVICE` で切り替える（ビルドコンテキストはリポジトリルート）。
 - コンテナ内は `PYTHONPATH=/app`、`common/` と対象サービスの `app/`、`data/seed/` をコピー。
 - シードファイルのパスは環境変数 `SEED_FILE` で指定（未指定時はリポジトリの `data/seed/<service>.json`）。
-- Minikube ではイメージを Minikube の Docker デーモンに直接ビルドし（`scripts/build_images_minikube.sh`）、`imagePullPolicy: IfNotPresent` でレジストリ無しに参照する。
+- Minikube を含むデプロイでは、`main`マージ時にGHCRへpushされた既存イメージ（`ghcr.io/picketfence-labs/insurance-<service>:<version>`）を`imagePullPolicy: IfNotPresent`でpullする（`scripts/deploy_k8s.sh`が`IMAGE_TAG`環境変数でタグを解決、既定`v0.1.0`。詳細: [ADR 0007](decisions/0007-minikube-deploy-image-source.md)）。未pushのローカルコード変更を試す場合のみ、`scripts/build_images_minikube.sh`でMinikubeのDockerデーモンに直接ビルドし`IMAGE_TAG=local`を指定する。
 
 ## Kubernetes 構成
 

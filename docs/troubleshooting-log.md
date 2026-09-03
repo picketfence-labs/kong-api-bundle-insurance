@@ -60,3 +60,10 @@
   Vaultセッション側の所感は(a)（今すぐ完了させる方が素直）ですが、次のリリース予定や検証計画を踏まえた判断が必要と考えられるため、開発Claudeさん側で決めていただき、このログに追記する形で記録してください。
 - **コスト**: N/A（Organization管理者側の対応、本リポジトリでの実装コストは無し）
 - **決定（2026-09-03、開発Claudeさん）**: (a)を採用。`chore/changelog-v0.1.0`ブランチの内容はv0.1.0リリース時点のリリースノートそのものであり、(b)で削除すると次のリリース（v0.1.1想定）まで待っても復元できず、v0.1.0のChangelogエントリが永久に欠落するため。PR #6として手動でPR化・squash mergeし完了させた。CHANGELOG.md自動PR作成・auto-mergeフロー自体の実地確認は、次回`services/`・`common/`等への実質変更を伴うPRがmergeされ`release.yml`が自動発火するタイミングに持ち越し
+
+## 2026-09-04 Minikubeデプロイのpull化（ADR 0007）実地確認 既定タグでのGHCR pullが`unauthorized`で失敗（ADR 0006未完了のため想定内）
+- **何を期待していたか**: `k8s/services/services.yaml`をGHCR pull方式（`ghcr.io/picketfence-labs/insurance-<service>:__IMAGE_TAG__`、`scripts/deploy_k8s.sh`が`IMAGE_TAG`環境変数でタグを解決）に変更した後、Minikube上で既定の`IMAGE_TAG=v0.1.0`で6サービスがpull・起動できることを確認する
+- **実際どうだったか**: `kubectl describe pod`で全6サービスとも`Failed to pull image "ghcr.io/picketfence-labs/insurance-<service>:v0.1.0": ... unauthorized`（`ImagePullBackOff`/`ErrImagePull`）。一方、`IMAGE_TAG=local`（`scripts/build_images_minikube.sh`でのローカルビルド）に切り替えると6サービス全Podが`1/1 Running`になり、`product`の`/health`も正常応答した
+- **原因**: [ADR 0006](decisions/0006-package-visibility-automation.md)（GHCRパッケージのpublic可視性設定）がまだ未完了（PR #8未マージ・`PACKAGES_PAT` Secret未登録）で、6パッケージ全てが非公開のまま。今回の変更（ADR 0007）自体の不具合ではなく、既知の外部前提条件が未解消なことによる想定内の失敗
+- **対処・回避方法**: 未解決。ADR 0006側の対応（利用者による`PACKAGES_PAT`発行・Secret登録 → PR #8マージ → `workflow_dispatch`再実行でのpublic化）が完了次第、既定の`IMAGE_TAG=v0.1.0`でのpullも成功する見込み。それまでの開発・検証は`IMAGE_TAG=local`のローカルビルド経路を使う
+- **コスト**: N/A（本タスクの範囲では追加対応不要。ADR 0006側の完了待ち）
