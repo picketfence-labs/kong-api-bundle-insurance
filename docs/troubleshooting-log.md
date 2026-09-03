@@ -60,3 +60,10 @@
   Vaultセッション側の所感は(a)（今すぐ完了させる方が素直）ですが、次のリリース予定や検証計画を踏まえた判断が必要と考えられるため、開発Claudeさん側で決めていただき、このログに追記する形で記録してください。
 - **コスト**: N/A（Organization管理者側の対応、本リポジトリでの実装コストは無し）
 - **決定（2026-09-03、開発Claudeさん）**: (a)を採用。`chore/changelog-v0.1.0`ブランチの内容はv0.1.0リリース時点のリリースノートそのものであり、(b)で削除すると次のリリース（v0.1.1想定）まで待っても復元できず、v0.1.0のChangelogエントリが永久に欠落するため。PR #6として手動でPR化・squash mergeし完了させた。CHANGELOG.md自動PR作成・auto-mergeフロー自体の実地確認は、次回`services/`・`common/`等への実質変更を伴うPRがmergeされ`release.yml`が自動発火するタイミングに持ち越し
+
+## 2026-09-03 完了報告後の確認 「GHCRパッケージのpublic可視性設定は成功した」という記録が誤りだった（訂正）
+- **何を期待していたか**: 上記エントリ（Organization workflow write権限のブロッカー解消）で「(1)...GHCRパッケージのpublic可視性設定（best-effort）は成功した」と記録し、本リポジトリのVault側project memoryにも同内容を反映していた
+- **実際どうだったか**: `gh run view <run-id> --log`で当該ステップの実際のログを確認したところ、6サービス全てで`gh: Not Found (HTTP 404)`により失敗していた（`set -euo pipefail`のため1件目`product`で即中断）。`continue-on-error: true`によりジョブ全体は緑チェックのまま完走したため、ログ本文を確認せずActions UI上の見た目だけで「成功」と判断してしまっていた。実際に`docker pull`を未認証で試したところ`unauthorized`、GitHub上のpackageページも`404`（非公開のまま）で、design-brief.mdセクション5の検証項目「本リポジトリ以外から`docker pull`で取得できることを確認」を満たしていない状態だった
+- **原因**: (1) `continue-on-error: true`のステップは失敗してもジョブ全体が緑になるため、ログ本文を見ずに完了と判断するのは危険。(2) 根本原因はADR 0006参照。GitHub PackagesのAPIは認証方式としてclassic PATのみを想定しており、`GITHUB_TOKEN`ではvisibility変更が404になる
+- **対処・回避方法**: [ADR 0006](decisions/0006-package-visibility-automation.md)としてclassic PAT（`write:packages`のみ、Secret名`PACKAGES_PAT`）を追加する方式を決定。PAT発行・Secret登録は利用者側で対応（外部前提条件のため、能動的に相談済み）。登録後、`workflow_dispatch`で再実行し既存6パッケージのpublic化を実地確認する
+- **教訓**: `continue-on-error: true`を使うステップは、「失敗してもワークフローを止めない」だけであり「成功した」ことの確認にはならない。best-effort処理の完了報告時は必ずログ本文（`gh run view --log`）まで確認すること
