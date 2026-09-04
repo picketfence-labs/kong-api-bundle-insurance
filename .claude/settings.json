@@ -5,6 +5,7 @@
       "Bash(git status:*)", "Bash(git diff:*)", "Bash(git log:*)",
       "Bash(git checkout:*)", "Bash(git switch:*)",
       "Bash(docker build:*)", "Bash(docker images:*)", "Bash(docker --version)",
+      "Bash(ruff check:*)",
       "Bash(terraform -chdir=terraform/konnect init:*)",
       "Bash(terraform -chdir=terraform/konnect plan:*)",
       "Bash(terraform -chdir=terraform/konnect validate:*)",
