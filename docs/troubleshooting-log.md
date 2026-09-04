@@ -61,9 +61,24 @@
 - **コスト**: N/A（Organization管理者側の対応、本リポジトリでの実装コストは無し）
 - **決定（2026-09-03、開発Claudeさん）**: (a)を採用。`chore/changelog-v0.1.0`ブランチの内容はv0.1.0リリース時点のリリースノートそのものであり、(b)で削除すると次のリリース（v0.1.1想定）まで待っても復元できず、v0.1.0のChangelogエントリが永久に欠落するため。PR #6として手動でPR化・squash mergeし完了させた。CHANGELOG.md自動PR作成・auto-mergeフロー自体の実地確認は、次回`services/`・`common/`等への実質変更を伴うPRがmergeされ`release.yml`が自動発火するタイミングに持ち越し
 
-## 2026-09-04 Minikubeデプロイのpull化（ADR 0007）実地確認 既定タグでのGHCR pullが`unauthorized`で失敗（ADR 0006未完了のため想定内）
-- **何を期待していたか**: `k8s/services/services.yaml`をGHCR pull方式（`ghcr.io/picketfence-labs/insurance-<service>:__IMAGE_TAG__`、`scripts/deploy_k8s.sh`が`IMAGE_TAG`環境変数でタグを解決）に変更した後、Minikube上で既定の`IMAGE_TAG=v0.1.0`で6サービスがpull・起動できることを確認する
-- **実際どうだったか**: `kubectl describe pod`で全6サービスとも`Failed to pull image "ghcr.io/picketfence-labs/insurance-<service>:v0.1.0": ... unauthorized`（`ImagePullBackOff`/`ErrImagePull`）。一方、`IMAGE_TAG=local`（`scripts/build_images_minikube.sh`でのローカルビルド）に切り替えると6サービス全Podが`1/1 Running`になり、`product`の`/health`も正常応答した
-- **原因**: [ADR 0006](decisions/0006-package-visibility-automation.md)（GHCRパッケージのpublic可視性設定）がまだ未完了（PR #8未マージ・`PACKAGES_PAT` Secret未登録）で、6パッケージ全てが非公開のまま。今回の変更（ADR 0007）自体の不具合ではなく、既知の外部前提条件が未解消なことによる想定内の失敗
-- **対処・回避方法**: 未解決。ADR 0006側の対応（利用者による`PACKAGES_PAT`発行・Secret登録 → PR #8マージ → `workflow_dispatch`再実行でのpublic化）が完了次第、既定の`IMAGE_TAG=v0.1.0`でのpullも成功する見込み。それまでの開発・検証は`IMAGE_TAG=local`のローカルビルド経路を使う
-- **コスト**: N/A（本タスクの範囲では追加対応不要。ADR 0006側の完了待ち）
+## 2026-09-03 完了報告後の確認 「GHCRパッケージのpublic可視性設定は成功した」という記録が誤りだった（訂正）
+- **何を期待していたか**: 上記エントリ（Organization workflow write権限のブロッカー解消）で「(1)...GHCRパッケージのpublic可視性設定（best-effort）は成功した」と記録し、本リポジトリのVault側project memoryにも同内容を反映していた
+- **実際どうだったか**: `gh run view <run-id> --log`で当該ステップの実際のログを確認したところ、6サービス全てで`gh: Not Found (HTTP 404)`により失敗していた（`set -euo pipefail`のため1件目`product`で即中断）。`continue-on-error: true`によりジョブ全体は緑チェックのまま完走したため、ログ本文を確認せずActions UI上の見た目だけで「成功」と判断してしまっていた。実際に`docker pull`を未認証で試したところ`unauthorized`、GitHub上のpackageページも`404`（非公開のまま）で、design-brief.mdセクション5の検証項目「本リポジトリ以外から`docker pull`で取得できることを確認」を満たしていない状態だった
+- **原因**: (1) `continue-on-error: true`のステップは失敗してもジョブ全体が緑になるため、ログ本文を見ずに完了と判断するのは危険。(2) 根本原因はADR 0006参照。GitHub PackagesのAPIは認証方式としてclassic PATのみを想定しており、`GITHUB_TOKEN`ではvisibility変更が404になる
+- **対処・回避方法**: [ADR 0006](decisions/0006-package-visibility-automation.md)としてclassic PAT（`write:packages`のみ、Secret名`PACKAGES_PAT`）を追加する方式を決定。PAT発行・Secret登録は利用者側で対応（外部前提条件のため、能動的に相談済み）。登録後、`workflow_dispatch`で再実行し既存6パッケージのpublic化を実地確認する
+- **教訓**: `continue-on-error: true`を使うステップは、「失敗してもワークフローを止めない」だけであり「成功した」ことの確認にはならない。best-effort処理の完了報告時は必ずログ本文（`gh run view --log`）まで確認すること
+
+## 2026-09-04 `PACKAGES_PAT`登録後も同じ404で失敗 → visibility変更API自体が存在しないと判明（ADR 0006の前提が誤りだった）
+
+- **何を期待していたか**: ADR 0006の決定（`write:packages`スコープのみのclassic PAT `PACKAGES_PAT` を追加）に従い、利用者に(1)PAT発行（`picketfence-labs` Organization ownerアカウント）、(2)リポジトリSecretへの登録を依頼。登録後`workflow_dispatch`で`release.yml`を再実行すれば「Publicize GHCR packages」ステップが成功する見込みだった
+- **実際どうだったか**: `PACKAGES_PAT`登録後の再実行（`workflow_dispatch`、Run ID `33819001619`）でも、6サービス全てで**同じ`404 Not Found`**が発生した。Vaultセッション側でOrganization owner権限を持つ別アカウント経由の`read:packages`スコープで同一パッケージへ`GET /orgs/{org}/packages/container/{name}`を試したところ**成功**し、認証情報・権限自体は正しく機能していることを確認。この時点でGitHub公式のREST APIリファレンス（[Packages API](https://docs.github.com/en/rest/packages/packages)）のエンドポイント一覧を確認したところ、組織所有パッケージに対してGET・DELETE・POST restoreのみが公開されており、**visibilityを変更するPATCHエンドポイント自体がAPIとして存在しない**ことが判明した
+- **原因**: ADR 0006作成時に参照した公式ドキュメントの記述（「GitHub Packages only supports authentication using a personal access token (classic)」）は、push/pull等の一般的な認証方式についての説明であり、「visibility変更用の管理APIが実在すること」までは意味していなかった。WebFetch（AI要約）でドキュメントを確認した際、実際のAPIエンドポイント一覧までは照合していなかったことが、誤った選択肢（classic PATなら成功する）の採択につながった
+- **対処・回避方法**: [ADR 0007](decisions/0007-package-visibility-manual-only.md)として自動化を撤回。`release.yml`から「Publicize GHCR packages」ステップと`PACKAGES_PAT`利用箇所を削除し、パッケージのvisibility変更はGitHub Web UI（Package settings画面の「Danger Zone」）からの手動対応に一本化。既存6パッケージは利用者がWeb UIから手動でpublicに変更し、`docker pull`が未認証で成功することも実地確認済み（2026-09-04）。なお、この手動変更を試みた際に「Setting is disabled by organization administrators」というエラーが別途発生し、Organization設定（`https://github.com/organizations/{org}/settings/packages`の「Package creation」ポリシーでPublicが許可されていなかった）の追加対応も必要だった（こちらも解消済み）
+- **教訓**: 「404 = 権限・認証方式の問題」と決めつけず、まず公式APIリファレンスの一覧で該当エンドポイントが実在するかを確認すべきだった。AI要約（WebFetch）は個別の文章の字面を追うだけになりがちで、「エンドポイント一覧に載っているか」という構造的な確認が漏れやすい。2件のADR（0004, 0006）にわたり存在しないAPIを前提に実装・修正を繰り返していた
+
+## 2026-09-04 Minikubeデプロイのpull化（ADR 0008）実地確認 既定タグでのGHCR pullが`unauthorized`で失敗（上記のADR 0006/0007の経緯と並行して発生、後日解消確認）
+- **何を期待していたか**: `k8s/services/services.yaml`をGHCR pull方式（`ghcr.io/picketfence-labs/insurance-<service>:__IMAGE_TAG__`、`scripts/deploy_k8s.sh`が`IMAGE_TAG`環境変数でタグを解決）に変更した後、Minikube上で既定タグで6サービスがpull・起動できることを確認する
+- **実際どうだったか**: 変更直後の実地確認時点では、`kubectl describe pod`で全6サービスとも`Failed to pull image ... unauthorized`（`ImagePullBackOff`/`ErrImagePull`）。一方、`IMAGE_TAG=local`（`scripts/build_images_minikube.sh`でのローカルビルド）に切り替えると6サービス全Podが`1/1 Running`になり、`product`の`/health`も正常応答し、変更のメカニズム自体（`IMAGE_TAG`解決・マニフェスト参照）に問題が無いことは切り分け済みだった
+- **原因**: 上記2エントリの経緯の通り、GHCRパッケージのvisibility変更API自体が存在せず（ADR 0007）、この時点ではまだ利用者によるWeb UIでの手動public化が完了していなかったため
+- **対処・回避方法**: 利用者がWeb UI（Package settings画面の「Danger Zone」）から6パッケージ全てを手動でpublicに変更（ADR 0007の対応）。以後、既定タグ（`v0.1.1`）でのGHCR pullも6サービス全てで成功することをMinikube上で再確認済み（2026-09-04）
+- **コスト**: N/A

@@ -88,7 +88,7 @@ CRUD5サービス（product/customer/application/policy/claim）は同一構造:
 - 全サービスが単一の `services/Dockerfile` を共有し、ビルド引数 `SERVICE` で切り替える（ビルドコンテキストはリポジトリルート）。
 - コンテナ内は `PYTHONPATH=/app`、`common/` と対象サービスの `app/`、`data/seed/` をコピー。
 - シードファイルのパスは環境変数 `SEED_FILE` で指定（未指定時はリポジトリの `data/seed/<service>.json`）。
-- Minikube を含むデプロイでは、`main`マージ時にGHCRへpushされた既存イメージ（`ghcr.io/picketfence-labs/insurance-<service>:<version>`）を`imagePullPolicy: IfNotPresent`でpullする（`scripts/deploy_k8s.sh`が`IMAGE_TAG`環境変数でタグを解決、既定`v0.1.0`。詳細: [ADR 0007](decisions/0007-minikube-deploy-image-source.md)）。未pushのローカルコード変更を試す場合のみ、`scripts/build_images_minikube.sh`でMinikubeのDockerデーモンに直接ビルドし`IMAGE_TAG=local`を指定する。
+- Minikube を含むデプロイでは、`main`マージ時にGHCRへpushされた既存イメージ（`ghcr.io/picketfence-labs/insurance-<service>:<version>`）を`imagePullPolicy: IfNotPresent`でpullする（`scripts/deploy_k8s.sh`が`IMAGE_TAG`環境変数でタグを解決、既定`v0.1.1`。詳細: [ADR 0008](decisions/0008-minikube-deploy-image-source.md)）。未pushのローカルコード変更を試す場合のみ、`scripts/build_images_minikube.sh`でMinikubeのDockerデーモンに直接ビルドし`IMAGE_TAG=local`を指定する。
 
 ## Kubernetes 構成
 

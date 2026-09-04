@@ -57,7 +57,7 @@ terraform -chdir=terraform/konnect init
 terraform -chdir=terraform/konnect apply
 
 # 4. Kubernetes へデプロイ(サービス + Kong DP + Route CRD)
-# サービスイメージは GHCR(ghcr.io/picketfence-labs/insurance-<service>)からpull(既定タグ v0.1.0、ADR 0007)
+# サービスイメージは GHCR(ghcr.io/picketfence-labs/insurance-<service>)からpull(既定タグ v0.1.1、ADR 0008)
 export KONNECT_PAT=$TF_VAR_konnect_pat
 ./scripts/deploy_k8s.sh
 

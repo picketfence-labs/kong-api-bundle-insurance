@@ -80,12 +80,12 @@ terraform -chdir=terraform/konnect output -raw control_plane_id
 
 ```bash
 export KONNECT_PAT=$TF_VAR_konnect_pat
-./scripts/deploy_k8s.sh   # 既定でGHCRの v0.1.0 タグをpull(IMAGE_TAGで変更可)
+./scripts/deploy_k8s.sh   # 既定でGHCRの v0.1.1 タグをpull(IMAGE_TAGで変更可)
 ```
 
 `deploy_k8s.sh` は以下を行います:
 
-1. `insurance` namespace と6サービス（Deployment/Service）を適用（イメージは`ghcr.io/picketfence-labs/insurance-<service>:${IMAGE_TAG:-v0.1.0}`からpull、ADR 0007）
+1. `insurance` namespace と6サービス（Deployment/Service）を適用（イメージは`ghcr.io/picketfence-labs/insurance-<service>:${IMAGE_TAG:-v0.1.1}`からpull、ADR 0008）
 2. Konnect PAT の Secret を作成（**ラベル `konghq.com/secret=true` が必須**）
 3. Konnect 接続（`KonnectAPIAuthConfiguration` / Mirror の `KonnectGatewayControlPlane` / `KonnectExtension`）を適用。Control Plane ID は Terraform 出力から自動挿入
 4. `KonnectExtension` が Ready になるまで待機（DP クライアント証明書は Operator が自動発行）
@@ -148,5 +148,5 @@ terraform -chdir=terraform/konnect destroy   # Konnect Control Plane を削除
 | `KonnectExtension` が Ready にならない | `terraform output control_plane_id` と `konnect.yaml` の CP ID 一致、PAT の権限を確認 |
 | DataPlane が Ready にならない | ingress Service（LoadBalancer）が pending でも DP Pod 自体は稼働。port-forward で確認可 |
 | ルートが 404 | `kubectl -n insurance get kongservice,kongroute` で PROGRAMMED=True か、`paths` を確認 |
-| Pod が ImagePullBackOff | GHCRパッケージが非公開の可能性（[ADR 0006](decisions/0006-package-visibility-automation.md)対応状況を確認）。ローカル変更を試す場合は `./scripts/build_images_minikube.sh` を実行の上 `IMAGE_TAG=local` を指定しているか確認 |
+| Pod が ImagePullBackOff | GHCRパッケージが非公開の可能性（新規パッケージ作成時は手動publicize対応が必要。[ADR 0007](decisions/0007-package-visibility-manual-only.md)参照）。ローカル変更を試す場合は `./scripts/build_images_minikube.sh` を実行の上 `IMAGE_TAG=local` を指定しているか確認 |
 | サービスが 500 | `data/seed/*.json` を生成済みか（手順1）。イメージに同梱される |

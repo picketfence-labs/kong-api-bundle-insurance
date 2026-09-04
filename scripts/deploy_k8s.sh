@@ -8,14 +8,14 @@
 #   - 環境変数 KONNECT_PAT に Konnect の Personal Access Token
 #
 # 使い方: ./scripts/deploy_k8s.sh
-#   IMAGE_TAG=v0.1.0 ./scripts/deploy_k8s.sh   # GHCRの特定バージョンをpull(既定)
+#   IMAGE_TAG=v0.1.1 ./scripts/deploy_k8s.sh   # GHCRの特定バージョンをpull(既定)
 #   IMAGE_TAG=local  ./scripts/deploy_k8s.sh   # build_images_minikube.shでのローカルビルドを参照(開発用)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 NS=insurance
-IMAGE_TAG="${IMAGE_TAG:-v0.1.0}"
+IMAGE_TAG="${IMAGE_TAG:-v0.1.1}"
 
 : "${KONNECT_PAT:?環境変数 KONNECT_PAT を設定してください}"
 

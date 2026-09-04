@@ -2,7 +2,7 @@ name: Release
 
 # main マージ時に自動でバージョンを算出し、6サービスのイメージをGHCRへbuild・push、
 # GitHub Releaseを作成し、CHANGELOG.mdの更新PRを自動merge する。
-# 詳細・判断根拠: docs/design-brief.md, docs/decisions/0001〜0005
+# 詳細・判断根拠: docs/design-brief.md, docs/decisions/0001〜0005, 0007（GHCRパッケージのpublicize自動化は撤回）
 on:
   push:
     branches: [main]
@@ -102,17 +102,10 @@ jobs:
           gh release create "${NEW_TAG}" --title "${NEW_TAG}" --generate-notes
 
       # GHCRパッケージのvisibilityはpushしただけでは自動的にpublicにならない場合がある(ADR 0004)。
-      # GITHUB_TOKENの権限では変更できない可能性があるため、失敗しても以降の処理は止めない
-      # (未対応の場合はpackage設定画面での手動publicizeが必要)。
-      - name: Publicize GHCR packages (best-effort)
-        continue-on-error: true
-        run: |
-          set -euo pipefail
-          for svc in ${{ env.SERVICES }}; do
-            gh api --method PATCH \
-              "/orgs/${{ env.IMAGE_NAMESPACE }}/packages/container/insurance-${svc}" \
-              -f visibility=public
-          done
+      # ADR 0006でclassic PAT経由の自動publicize APIを試したが、visibility変更用のREST/GraphQL API
+      # 自体がGitHubに存在しないと判明した(ADR 0007)。よって自動化は行わず、新規パッケージ作成時
+      # (=新サービス追加時)は、GitHub Web UIのPackage settings画面から手動でpublicに変更すること。
+      # 既存6パッケージは一度publicに設定済みで、以後のpush(バージョンアップ)では設定が保持される。
 
       - name: Update CHANGELOG.md via PR (auto-merge)
         run: |
