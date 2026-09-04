@@ -1,7 +1,8 @@
 # 6つのFastAPIサービスの Deployment と Service。
-# イメージは Minikube のローカルDockerにビルドしたものをそのまま使う
-# (imagePullPolicy: IfNotPresent)。Service名 = サービス名とし、Kong の
-# KongService がクラスタ内DNS(<svc>.insurance.svc)で到達できるようにする。
+# イメージは GHCR(ghcr.io/picketfence-labs/insurance-<service>)からpullする
+# (ADR 0007)。__IMAGE_TAG__ は deploy_k8s.sh が適用前に実際のタグへ置換する
+# プレースホルダ(未置換のままapplyしないこと)。Service名 = サービス名とし、
+# Kong の KongService がクラスタ内DNS(<svc>.insurance.svc)で到達できるようにする。
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -18,7 +19,7 @@ spec:
     spec:
       containers:
         - name: product
-          image: insurance-product:local
+          image: ghcr.io/picketfence-labs/insurance-product:__IMAGE_TAG__
           imagePullPolicy: IfNotPresent
           ports: [{ containerPort: 8000 }]
           readinessProbe:
@@ -57,7 +58,7 @@ spec:
     spec:
       containers:
         - name: customer
-          image: insurance-customer:local
+          image: ghcr.io/picketfence-labs/insurance-customer:__IMAGE_TAG__
           imagePullPolicy: IfNotPresent
           ports: [{ containerPort: 8000 }]
           readinessProbe:
@@ -96,7 +97,7 @@ spec:
     spec:
       containers:
         - name: simulation
-          image: insurance-simulation:local
+          image: ghcr.io/picketfence-labs/insurance-simulation:__IMAGE_TAG__
           imagePullPolicy: IfNotPresent
           ports: [{ containerPort: 8000 }]
           readinessProbe:
@@ -135,7 +136,7 @@ spec:
     spec:
       containers:
         - name: application
-          image: insurance-application:local
+          image: ghcr.io/picketfence-labs/insurance-application:__IMAGE_TAG__
           imagePullPolicy: IfNotPresent
           ports: [{ containerPort: 8000 }]
           readinessProbe:
@@ -174,7 +175,7 @@ spec:
     spec:
       containers:
         - name: policy
-          image: insurance-policy:local
+          image: ghcr.io/picketfence-labs/insurance-policy:__IMAGE_TAG__
           imagePullPolicy: IfNotPresent
           ports: [{ containerPort: 8000 }]
           readinessProbe:
@@ -213,7 +214,7 @@ spec:
     spec:
       containers:
         - name: claim
-          image: insurance-claim:local
+          image: ghcr.io/picketfence-labs/insurance-claim:__IMAGE_TAG__
           imagePullPolicy: IfNotPresent
           ports: [{ containerPort: 8000 }]
           readinessProbe:

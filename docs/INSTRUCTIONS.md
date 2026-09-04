@@ -7,18 +7,17 @@ Control Plane は Terraform で作成し、ローカル検証には Minikube を
 ```mermaid
 flowchart LR
   s0["0. 前提ツール"] --> s1["1. テストデータ生成"]
-  s1 --> s2["2. イメージビルド<br/>(Minikube)"]
-  s2 --> s3["3. Kong Operator導入"]
-  s3 --> s4["4. Konnect CP作成<br/>(Terraform)"]
-  s4 --> s5["5. K8sデプロイ"]
-  s5 --> s6["6. 動作確認"]
+  s1 --> s3["2. Kong Operator導入"]
+  s3 --> s4["3. Konnect CP作成<br/>(Terraform)"]
+  s4 --> s5["4. K8sデプロイ<br/>(GHCRからpull)"]
+  s5 --> s6["5. 動作確認"]
 ```
 
 ## 0. 前提ツール
 
 | ツール | 用途 |
 |---|---|
-| Docker | イメージビルド |
+| Docker | (任意)ローカルコード変更をMinikubeで試す場合のみ必要 |
 | minikube | ローカル Kubernetes |
 | kubectl | Kubernetes 操作 |
 | helm v3 | Kong Operator 導入 |
@@ -37,27 +36,19 @@ python3 -m pip install -r scripts/requirements.txt
 python3 scripts/generate_test_data.py
 ```
 
-出力: `data/seed/{product,customer,application,policy,claim}.json`
-（simulation は永続データを持たないためファイルなし）。イメージビルド時に同梱されます。
+出力: `data/seed/{product,customer,application,policy,claim}.json`。通常はリポジトリに
+コミット済みの内容がGHCR公開イメージにも同梱されているため、この手順は既存データを
+変更したい場合のみ必要です。
 
-## 2. サービスイメージのビルド（Minikube）
-
-Minikube の Docker デーモン内に直接ビルドし、レジストリ無しで参照できるようにします
-（`imagePullPolicy: IfNotPresent`）。
-
-```bash
-./scripts/build_images_minikube.sh
-```
-
-`insurance-{product,customer,simulation,application,policy,claim}:local` が作成されます。
-
-> **補足（本リポジトリ以外からの利用）**: 6サービスのイメージは `main` マージ時に GitHub
+> **補足（デプロイ時のイメージ取得元）**: サービスイメージは `main` マージ時に GitHub
 > Actions が自動で `ghcr.io/picketfence-labs/insurance-<service>:<version>`（および
-> `:latest`）としてGHCRへpushする（詳細: [design-brief.md](design-brief.md)）。別のデモ・
-> プロジェクトから直接 `docker pull ghcr.io/picketfence-labs/insurance-product:latest`
-> のように取得することも可能（本手順のようにMinikubeへローカルビルドする必要はない）。
+> `:latest`）としてGHCRへpushしており（詳細: [design-brief.md](design-brief.md)）、
+> 手順4（Kubernetesへのデプロイ）はこのGHCRイメージを直接pullします（ADR 0007）。
+> Minikubeへのローカルビルドは不要です。未pushのローカルコード変更を試したい場合のみ
+> `./scripts/build_images_minikube.sh` を実行し、`IMAGE_TAG=local ./scripts/deploy_k8s.sh`
+> でデプロイしてください。
 
-## 3. Kong Operator と Gateway API の導入（初回のみ）
+## 2. Kong Operator と Gateway API の導入（初回のみ）
 
 ```bash
 ./scripts/setup_kong_operator.sh
@@ -66,9 +57,9 @@ Minikube の Docker デーモン内に直接ビルドし、レジストリ無し
 Gateway API CRD と Kong Operator（`kong/kong-operator` Helm チャート）を導入します。
 導入済みの場合はスキップして構いません。
 
-## 4. Konnect の Control Plane を作成（Terraform）
+## 3. Konnect の Control Plane を作成（Terraform）
 
-Control Plane のみを Terraform で作成します（Service/Route は手順5の CRD で管理）。
+Control Plane のみを Terraform で作成します（Service/Route は手順4の CRD で管理）。
 
 ```bash
 export TF_VAR_konnect_pat=<Konnect Personal Access Token>
@@ -85,16 +76,16 @@ terraform -chdir=terraform/konnect output -raw control_plane_id
 > リージョンが us 以外の場合は変数 `konnect_server_url` を変更します
 > （`terraform.tfvars` または `-var`）。
 
-## 5. Kubernetes へのデプロイ
+## 4. Kubernetes へのデプロイ
 
 ```bash
 export KONNECT_PAT=$TF_VAR_konnect_pat
-./scripts/deploy_k8s.sh
+./scripts/deploy_k8s.sh   # 既定でGHCRの v0.1.1 タグをpull(IMAGE_TAGで変更可)
 ```
 
 `deploy_k8s.sh` は以下を行います:
 
-1. `insurance` namespace と6サービス（Deployment/Service）を適用
+1. `insurance` namespace と6サービス（Deployment/Service）を適用（イメージは`ghcr.io/picketfence-labs/insurance-<service>:${IMAGE_TAG:-v0.1.1}`からpull、ADR 0008）
 2. Konnect PAT の Secret を作成（**ラベル `konghq.com/secret=true` が必須**）
 3. Konnect 接続（`KonnectAPIAuthConfiguration` / Mirror の `KonnectGatewayControlPlane` / `KonnectExtension`）を適用。Control Plane ID は Terraform 出力から自動挿入
 4. `KonnectExtension` が Ready になるまで待機（DP クライアント証明書は Operator が自動発行）
@@ -110,7 +101,7 @@ kubectl -n insurance label secret konnect-pat konghq.com/secret=true konghq.com/
 > **注意:** Secret に `konghq.com/secret=true` を付けないと、Kong Operator の Secret
 > キャッシュが対象外とし `Secret not found` になります。
 
-## 6. 動作確認
+## 5. 動作確認
 
 Kong DP のプロキシ Service に port-forward してアクセスします（Minikube では
 LoadBalancer の EXTERNAL-IP は `minikube tunnel` 無しでは pending のままですが、
@@ -157,5 +148,5 @@ terraform -chdir=terraform/konnect destroy   # Konnect Control Plane を削除
 | `KonnectExtension` が Ready にならない | `terraform output control_plane_id` と `konnect.yaml` の CP ID 一致、PAT の権限を確認 |
 | DataPlane が Ready にならない | ingress Service（LoadBalancer）が pending でも DP Pod 自体は稼働。port-forward で確認可 |
 | ルートが 404 | `kubectl -n insurance get kongservice,kongroute` で PROGRAMMED=True か、`paths` を確認 |
-| Pod が ImagePullBackOff | `./scripts/build_images_minikube.sh` を実行し、`eval $(minikube docker-env)` 環境でビルド済みか確認 |
+| Pod が ImagePullBackOff | GHCRパッケージが非公開の可能性（新規パッケージ作成時は手動publicize対応が必要。[ADR 0007](decisions/0007-package-visibility-manual-only.md)参照）。ローカル変更を試す場合は `./scripts/build_images_minikube.sh` を実行の上 `IMAGE_TAG=local` を指定しているか確認 |
 | サービスが 500 | `data/seed/*.json` を生成済みか（手順1）。イメージに同梱される |
