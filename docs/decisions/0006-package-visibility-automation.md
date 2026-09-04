@@ -1,7 +1,7 @@
 # ADR 0006: GHCRパッケージのpublic可視性変更を自動化する認証方式
 
 - **日付**: 2026-09-03
-- **状態**: 決定
+- **状態**: **廃止（Superseded）** — 2026-09-04、[ADR 0007](0007-package-visibility-manual-only.md)により置き換え。本ADRの前提（classic PATなら成功する）自体が誤りだったため、本文はそのまま残し「想定していたこと vs 実際どうだったか」に追記する形で訂正する
 
 ## コンテキスト
 `release.yml`の「Publicize GHCR packages (best-effort)」ステップ（ADR 0004で「pushしただけでは自動的にpublicにならない場合がある」と想定していたリスクへの対処）は、`GITHUB_TOKEN`を使って`PATCH /orgs/{org}/packages/container/{name}` APIを呼び出していた。2026-09-03の`workflow_dispatch`実地発火で、全6パッケージが`404 Not Found`で失敗していたことが判明した（`continue-on-error: true`により以降のジョブは継続したため、Actions UI上は目立たず見落とされた）。
@@ -32,6 +32,7 @@ GitHub公式ドキュメント（`about-permissions-for-github-packages`）を�
 ## 想定していたこと vs 実際どうだったか
 - 想定: `GITHUB_TOKEN`に`packages: write`権限を宣言していれば、visibility変更APIも通る（ADR 0004時点ではこの区別を認識していなかった）
 - 実際: GitHub PackagesのAPIは認証方式としてclassic PATのみを想定しており、`GITHUB_TOKEN`では404になる。`continue-on-error: true`によりワークフロー全体は成功表示のまま終わり、実際にログを確認するまで気づけなかった
+- **さらなる訂正（2026-09-04）**: 本ADRの決定に従い`PACKAGES_PAT`（`write:packages`スコープのみのclassic PAT、Organization ownerアカウントで発行）を登録し`workflow_dispatch`で再実行したが、**同じ404で失敗し続けた**。Vaultセッション側でGitHub公式APIリファレンス（Packages API、`https://docs.github.com/en/rest/packages/packages`）のエンドポイント一覧を確認したところ、組織所有パッケージに対してGET（取得・一覧）・DELETE（削除）・POST restore（復元）は存在するが、**visibilityを変更するPATCHエンドポイント自体がAPIとして存在しない**ことが判明した。つまり404の原因は認証方式（`GITHUB_TOKEN` vs classic PAT）の違いではなく、そもそも呼び出し先のAPIが存在しないことだった。本ADR作成時の「GitHub Packages only supports authentication using a personal access token (classic)」という公式ドキュメントの記述は、pushやpull等の通常操作についての一般的な認証方式の説明であり、「visibility変更の管理APIが存在する」ことまでは意味していなかった。WebFetch（AI要約）でドキュメントを確認した際、実際のAPIエンドポイント一覧までは照合していなかったことが誤った選択肢1採択の直接原因。詳細は[ADR 0007](0007-package-visibility-manual-only.md)参照
 
 ## 影響・トレードオフ
 - `PACKAGES_PAT`は長期間有効な資格情報のため、失効・ローテーション管理が必要になる（有効期限を設定し、期限管理を利用者側で行うことを推奨）
