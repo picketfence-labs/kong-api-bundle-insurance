@@ -90,3 +90,9 @@
 - **原因**: ADR 0009作成時点（Vault側での事前調査）では、「OSSレンダラーとしてScalarが使える」＝「CLIで静的HTML生成ができる」という前提で比較検討していたが、実際にCLIの提供コマンドまでは確認していなかった
 - **対処・回避方法**: 代替として、Scalarが公式に推奨する自前ホスト方式（`@scalar/api-reference`をCDN経由で読み込み、`Scalar.createApiReference('#app', { url: './openapi.yaml' })`で初期化する数行のHTMLファイルを配置する方式。ビルド不要、GitHub Pages等の静的ホスティングでの利用が公式に推奨されている）を採用。ADR 0009の「決定」（GitHub Pages自前ホスト + Scalar採用）自体は変更不要（達成したい結果は同じ）だが、「静的HTML生成」という実現手段の記述は不正確だったため、本パイプライン実装時にADR 0009へ注記を追記する
 - **教訓**: ADR 0006/0007の教訓（「404=権限問題と決めつけず、まずAPI一覧で存在確認する」）と同種のパターン。ツール選定時、「機能名（レンダラー）」と「その機能を使うための具体的なインターフェース（CLIサブコマンド）」を分けて確認すべきだった
+
+## 2026-09-05 OpenAPI Doc公開パイプライン（PR #15）マージ後 実地確認完了
+
+- **何を期待していたか**: PR #15マージ後、`pages.yml`が`main`へのpushで発火し、`actions/deploy-pages`によるGitHub Pages公開が成功すること（PR #15時点では`workflow_dispatch`が既定ブランチ未反映のワークフローを実行できない仕様のため未検証だった）
+- **実際どうだったか**: マージ後の自動発火（push, Run ID `33949981836`）が`success`で完了。6サービス全ての`https://picketfence-labs.github.io/kong-api-bundle-insurance/api/<service>/`（+ `openapi.yaml`、+ ルートインデックス）がHTTP 200で応答し、Playwrightで実際にブラウザ表示して日本語のAPI仕様が正しくレンダリングされることを確認（コンソールエラーは`favicon.ico`の404のみ、無害）。想定通り解消された
+- **コスト**: N/A
