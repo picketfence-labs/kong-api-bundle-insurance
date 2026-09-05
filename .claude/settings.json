@@ -19,12 +19,15 @@
       "Edit(.claude/settings.json)", "Write(.claude/settings.json)",
       "Edit", "Write",
       "Bash(git add:*)", "Bash(git commit:*)", "Bash(git push:*)",
-      "Bash(gh pr create:*)", "Bash(gh pr merge:*)",
+      "Bash(gh pr create:*)",
       "Bash(docker push:*)",
       "Bash(terraform -chdir=terraform/konnect apply:*)",
       "Bash(terraform -chdir=terraform/konnect destroy:*)",
       "Bash(kubectl apply:*)", "Bash(kubectl delete:*)",
       "Bash(helm install:*)", "Bash(helm upgrade:*)", "Bash(helm uninstall:*)"
+    ],
+    "deny": [
+      "Bash(gh pr merge:*)"
     ]
   }
 }
