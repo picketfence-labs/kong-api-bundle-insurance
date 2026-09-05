@@ -19,6 +19,7 @@ Kong Gateway Enterprise 3.15 + Kong Konnect を前段に置き、損害保険ド
 | `docs/ARCHITECTURE.md` | 全体構成・技術的な説明 |
 | `docs/INSTRUCTIONS.md` | 環境の構築手順 |
 | `docs/design-brief.md` | コンテナ化・パブリックレジストリ公開の基本設計（Dev Design Brief） |
+| `docs/design-brief-container-docs.md` | コンテナ説明改善（README再構成 + OpenAPI Doc公開）の基本設計（Dev Design Brief、未実装） |
 | `docs/decisions/NNNN-*.md` | 複数の妥当な選択肢がある判断ポイントの記録（ADR）。1判断＝1ファイル |
 | `docs/troubleshooting-log.md` | 実装中に想定通りに動かなかったこと（エラー・仕様の相違・プロセスの摩擦等）を漏れなく記録するログ。判断ポイントかどうかに関わらず、その場で追記する |
 
