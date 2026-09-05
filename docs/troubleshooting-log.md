@@ -82,3 +82,11 @@
 - **原因**: 上記2エントリの経緯の通り、GHCRパッケージのvisibility変更API自体が存在せず（ADR 0007）、この時点ではまだ利用者によるWeb UIでの手動public化が完了していなかったため
 - **対処・回避方法**: 利用者がWeb UI（Package settings画面の「Danger Zone」）から6パッケージ全てを手動でpublicに変更（ADR 0007の対応）。以後、既定タグ（`v0.1.1`）でのGHCR pullも6サービス全てで成功することをMinikube上で再確認済み（2026-09-04）
 - **コスト**: N/A
+
+## 2026-09-05 OpenAPI Doc公開パイプライン実装着手時 ADR 0009が前提とした「Scalarの静的HTML生成CLI」が実在しない
+
+- **何を期待していたか**: ADR 0009（GitHub Pages自前ホスト + Scalarでの静的HTML生成）に基づき、`@scalar/cli`で各サービスの`openapi.yaml`から静的HTMLファイルを生成するGitHub Actionsステップを実装する
+- **実際どうだったか**: DeepWiki（`scalar/scalar`）で確認したところ、`@scalar/cli`の`document serve`サブコマンドはローカル開発用のプレビューサーバーを起動するのみで、単一の自己完結型HTMLファイルを出力するCLIコマンドは存在しない（`document markdown`はMarkdown生成のみ）
+- **原因**: ADR 0009作成時点（Vault側での事前調査）では、「OSSレンダラーとしてScalarが使える」＝「CLIで静的HTML生成ができる」という前提で比較検討していたが、実際にCLIの提供コマンドまでは確認していなかった
+- **対処・回避方法**: 代替として、Scalarが公式に推奨する自前ホスト方式（`@scalar/api-reference`をCDN経由で読み込み、`Scalar.createApiReference('#app', { url: './openapi.yaml' })`で初期化する数行のHTMLファイルを配置する方式。ビルド不要、GitHub Pages等の静的ホスティングでの利用が公式に推奨されている）を採用。ADR 0009の「決定」（GitHub Pages自前ホスト + Scalar採用）自体は変更不要（達成したい結果は同じ）だが、「静的HTML生成」という実現手段の記述は不正確だったため、本パイプライン実装時にADR 0009へ注記を追記する
+- **教訓**: ADR 0006/0007の教訓（「404=権限問題と決めつけず、まずAPI一覧で存在確認する」）と同種のパターン。ツール選定時、「機能名（レンダラー）」と「その機能を使うための具体的なインターフェース（CLIサブコマンド）」を分けて確認すべきだった
