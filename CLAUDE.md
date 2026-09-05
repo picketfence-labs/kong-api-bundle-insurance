@@ -49,12 +49,13 @@ Kong Gateway Enterprise 3.15 + Kong Konnect を前段に置き、損害保険ド
 
 ## 開発ワークフロー（ブランチ・PR）
 
-- **`main`への直接pushは禁止**。featureブランチを作成し、PRを経由してmergeする（`git checkout -b <branch>` → 実装・検証 → `git push -u origin <branch>` → `gh pr create` → レビュー後 `gh pr merge --squash --delete-branch`）。
+- **`main`への直接pushは禁止**。featureブランチを作成し、PRを経由してmergeする（`git checkout -b <branch>` → 実装・検証 → `git push -u origin <branch>` → `gh pr create` → **完了報告を返して停止**）。
+- **マージは人間が実行する（2026-09-05追加）。Claude自身は`gh pr merge`を実行しない**（`.claude/settings.json`で`Bash(gh pr merge:*)`を`deny`にして技術的に禁止済み）。理由: PR #1〜#16の全てで、Claudeが`gh pr create`の直後に自ら`gh pr merge`まで実行しており、GitHub Reviewsが一度も付かないまま（＝人間が実際にレビュー・承認した記録が無いまま）マージされ続けていたことが判明したため（詳細: Picketfence Labs Vault側`kong-api-bundle-insurance`コンテナ説明改善Projectの実施後評価、2026-09-05）。PR作成後は完了報告（何を・どう検証したか・逸脱判断・持ち越し論点・プロセスへの摩擦の5点）を返し、そこでタスクを完了とする。マージ自体は人間がGitHub UIまたは自分の端末の`gh`から行う。
 - PR descriptionには最低限、**何を（What）・なぜ（Why）・どう検証したか（Testing）**の3点を含める。
 - **PRの粒度は1PR=1テーマ**。「ついでに直した」を混ぜない。
 - コミットメッセージの規約は特に定めない（本リポジトリの既存コミット履歴のスタイルに合わせる）。
 - 検証がその場では完了できない変更（依存する環境が未整備等）をpushする場合、PRタイトルに `[WIP]` を付けるか `gh pr create --draft` で作成し、何が未検証かをPR descriptionに明記する。
-- `main`マージ時に自動実行されるコンテナpush（上記「コンテナ公開・バージョニング方針」）があるため、**`main`へのPRレビューは通常以上に注意する**（マージ＝パブリックイメージの即時公開に直結する）。
+- `main`マージ時に自動実行されるコンテナpush（上記「コンテナ公開・バージョニング方針」）があるため、**`main`へのPRレビューは通常以上に注意する**（マージ＝パブリックイメージの即時公開に直結する）。上記「マージは人間が実行する」はこの注意事項を実効化するための措置でもある。
 
 ## エスカレーション条件・完了報告フォーマット
 

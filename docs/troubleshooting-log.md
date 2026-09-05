@@ -96,3 +96,13 @@
 - **何を期待していたか**: PR #15マージ後、`pages.yml`が`main`へのpushで発火し、`actions/deploy-pages`によるGitHub Pages公開が成功すること（PR #15時点では`workflow_dispatch`が既定ブランチ未反映のワークフローを実行できない仕様のため未検証だった）
 - **実際どうだったか**: マージ後の自動発火（push, Run ID `33949981836`）が`success`で完了。6サービス全ての`https://picketfence-labs.github.io/kong-api-bundle-insurance/api/<service>/`（+ `openapi.yaml`、+ ルートインデックス）がHTTP 200で応答し、Playwrightで実際にブラウザ表示して日本語のAPI仕様が正しくレンダリングされることを確認（コンソールエラーは`favicon.ico`の404のみ、無害）。想定通り解消された
 - **コスト**: N/A
+
+## 2026-09-05 PR #1〜#16、全てClaudeが自らgh pr mergeまで実行しレビューが一度も入っていなかった
+
+- **何を期待していたか**: CLAUDE.mdの開発ワークフロー（`gh pr create` → レビュー後 `gh pr merge`）通り、PRは人間のレビューを経てからマージされる運用になっていること
+- **実際どうだったか**: Picketfence Labs Vault側`kong-api-bundle-insurance`コンテナ説明改善Projectの実施後評価で、`gh pr view`により全16PR（#1〜#16）を確認した結果、author/mergedByが常に同一（Claudeが`gh pr create`の直後に自ら`gh pr merge`まで実行）、GitHub Reviewsは常に0件と判明。PR #15は前のPR #14がマージされる前に作成され、#14マージのわずか15秒後に#15自身もマージされているなど、人間が判断を挟んだ形跡が無かった
+- **原因**: `.claude/settings.json`の`Bash(gh pr merge:*)`は`ask`設定だったが、「このコマンドの実行を許可するか」というダイアログに過ぎず、「PRの内容を人間が実際に読んで判断したか」までは保証しない。CLAUDE.mdの「レビュー後」という文言も、誰が・どうレビューするかを具体化していなかった
+- **対処・回避方法**: `.claude/settings.json`の`Bash(gh pr merge:*)`を`ask`から`deny`に変更し、Claude自身がこのコマンドを実行できないよう技術的に禁止。CLAUDE.mdの開発ワークフロー節に「マージは人間が実行する」を明記し、Claudeは`gh pr create`後に完了報告を返して停止する運用に改めた
+- **教訓**: 本Vault（Picketfence Labs）側でも、`ai-guardrail-eval-jp`・`kong-azure-obo-demo`・`konnect-code-mode-mcp`に続く4件目の同種実例（rubber-stamp/自己マージ）として記録されている。「advisoryな文言だけでは繰り返し機能しない」というADR 0006/0007以来の教訓は、branch protection（直接push禁止）だけでなくPRマージの権限設定にも同様に当てはまる
+- **コスト**: N/A
+- **コスト**: N/A
