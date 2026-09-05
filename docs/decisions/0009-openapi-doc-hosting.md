@@ -22,12 +22,13 @@
 - レンダラーとしてScalarを選んだのは、Redoc/Stoplight Elementsと比較してより新しい見た目・組み込みAPIクライアントを備える点が決め手（利用者確認済み）
 
 ## 想定していたこと vs 実際どうだったか
-（設計段階のため未実装。実際にGitHub Pages公開パイプラインを構築してから追記する）
+- **想定**: `@scalar/cli`に、`openapi.yaml`から自己完結型の静的HTMLファイルを生成するCLIコマンドがある
+- **実際**: `@scalar/cli`の`document serve`はローカル開発用のプレビューサーバーを起動するのみで、静的HTMLファイルを出力するコマンドは存在しない（DeepWiki `scalar/scalar`で確認、詳細は[troubleshooting-log.md](../troubleshooting-log.md)の2026-09-05エントリ）。代わりに、Scalarが公式に推奨する自前ホスト方式（`@scalar/api-reference`をCDN経由で読み込み`Scalar.createApiReference('#app', { url: './openapi.yaml' })`で初期化する数行のHTMLファイルを配置。ビルド不要）を採用した。「GitHub Pages自前ホスト + Scalar」という決定自体は変更なし、実現手段が「CLIでの静的HTML生成」から「CDN読み込み型HTMLシェルの配置」に変わった
 
 ## 影響・トレードオフ
 - GitHub Pagesの公開設定（Organization/リポジトリ設定でPages機能自体が制限されていないか）を実装着手前に確認する必要がある（過去に本リポジトリのOrganization設定でGHCR関連の制約が発覚した実績〈ADR 0006/0007〉があるため、思い込みで判断しない）
 - 将来6サービス以外のコンテナが追加された場合も、GitHub Pagesの出力パス構成（サービスごとのサブパス）はそのまま拡張できる設計にしておく必要がある
-- Scalarの静的HTML生成CLIのメンテナンス状況・破壊的変更リスクは、Redocほど実績が長くない点に留意する（実装時に固定バージョンを指定する等の対応を推奨）
+- CDN経由で読み込む`@scalar/api-reference`はバージョン固定なしだと将来の破壊的変更の影響を受ける（実装時にCDN URLへバージョンを固定指定する）
 
 ## 関連する決定
 - [ADR 0004: コンテナレジストリの選定](0004-container-registry-choice.md)（公開レジストリ＝GHCR一本化の既定方針を、今回のドキュメント公開方針でも踏襲する形）
