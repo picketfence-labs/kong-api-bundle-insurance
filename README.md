@@ -1,27 +1,56 @@
-# Kong API Bundle — 損害保険ドメイン
+# Kong API Bundle — 損害保険ドメイン（デモAPIコンテナ）
 
-Kong Gateway Enterprise 3.15 + Kong Konnect を前段に置き、損害保険会社を想定した
-6つのサンプルAPIサービスを Kubernetes 上で稼働させるデモ環境です。ゲートウェイは
-**Kong Operator** で管理し、ローカル検証は **Minikube** を使います。すべて日本語・
-日本のデータフォーマット(郵便番号・マイナンバー・電話番号など)に準拠しています。
+損害保険会社を想定した6つの汎用デモAPIコンテナ（product / customer / simulation /
+application / policy / claim）を公開しているリポジトリです。すべて日本語・日本の
+データフォーマット(郵便番号・マイナンバー・電話番号など)に準拠したダミーデータで動作し、
+各コンテナは単体でも `docker run` して手元で叩けます。イメージは GHCR
+（`ghcr.io/picketfence-labs/insurance-<service>`）で公開しています。
 
 ## サービス構成
 
-| サービス | 役割 | テストデータ | Kong Route |
-|---|---|---|---|
-| **product** | 商品マスタ | 5件 | `/product` |
-| **customer** | 顧客 | 100件 | `/customer` |
-| **simulation** | 保険料試算(ステートレス) | – | `/simulation` |
-| **application** | 申込 | 300件（成立200／未成立100） | `/application` |
-| **policy** | 契約 | 200件 | `/policy` |
-| **claim** | 保険金請求 | 50件 | `/claim` |
+| サービス | 役割 | テストデータ | パス | OpenAPI Doc |
+|---|---|---|---|---|
+| **product** | 商品マスタ | 5件 | `/product` | [Docs](https://picketfence-labs.github.io/kong-api-bundle-insurance/api/product/) |
+| **customer** | 顧客 | 100件 | `/customer` | [Docs](https://picketfence-labs.github.io/kong-api-bundle-insurance/api/customer/) |
+| **simulation** | 保険料試算(ステートレス) | – | `/simulation` | [Docs](https://picketfence-labs.github.io/kong-api-bundle-insurance/api/simulation/) |
+| **application** | 申込 | 300件（成立200／未成立100） | `/application` | [Docs](https://picketfence-labs.github.io/kong-api-bundle-insurance/api/application/) |
+| **policy** | 契約 | 200件 | `/policy` | [Docs](https://picketfence-labs.github.io/kong-api-bundle-insurance/api/policy/) |
+| **claim** | 保険金請求 | 50件 | `/claim` | [Docs](https://picketfence-labs.github.io/kong-api-bundle-insurance/api/claim/) |
 
 商品ラインナップ（損害保険）: 火災保険 / 自動車保険 / 傷害保険 / 医療保険（第三分野） / ペット保険。
 
 テストデータは全サービスをまたいで参照整合性が取れています（申込→契約→請求の連鎖、
 商品カテゴリと請求種別の整合など）。詳細は [docs/DATA.md](docs/DATA.md) を参照してください。
 
-## アーキテクチャ概要
+> 「パス」列は、後述の Kong Gateway 経由フルデモ環境でのルートです。単体のコンテナを
+> 直接叩く場合は各サービスの `/` 以下がそのままAPIのルートになります（OpenAPI Docを参照）。
+
+## フルデモ環境（Kong Gateway + Konnect + Kubernetes）
+
+上記6コンテナを **Kong Gateway Enterprise 3.15 + Kong Konnect** の背後に置き、
+**Kubernetes**（ローカル検証は **Minikube**）上でゲートウェイ込みで動かすフルデモ構成も
+用意しています。ゲートウェイは **Kong Operator** で管理します。詳細は
+[フルデモ環境の構築手順](#フルデモ環境の構築手順) を参照してください。
+
+## ドキュメント
+
+- [docs/DATA.md](docs/DATA.md) — データモデル定義と設計判断の記録
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — 全体構成・技術選定・ディレクトリ構成
+- [docs/INSTRUCTIONS.md](docs/INSTRUCTIONS.md) — 環境構築の詳細手順（Minikube / Kong Operator / Konnect）
+- [CLAUDE.md](CLAUDE.md) — 本リポジトリでの取り決め・作業方針
+
+## 技術スタック
+
+- **バックエンド**: Python 3.13 / FastAPI（OpenAPI 3.1 を自動生成）
+- **API Gateway**: Kong Gateway Enterprise 3.15（Konnect Hybrid mode / Data Plane）
+- **ゲートウェイ管理**: Kong Operator（`KonnectExtension` / `KongService` / `KongRoute` 等の CRD）
+- **IaC**: Terraform（Kong/konnect provider で Control Plane を作成）
+- **実行環境**: Kubernetes（ローカル検証は Minikube）
+- **APIドキュメント公開**: GitHub Pages（[ADR 0009](docs/decisions/0009-openapi-doc-hosting.md)）
+
+## フルデモ環境の構築手順
+
+### アーキテクチャ概要
 
 ```mermaid
 flowchart TB
@@ -39,7 +68,7 @@ flowchart TB
 - **Service/Route** は Kong Operator の CRD（`KongService`/`KongRoute`）で定義し、Konnect に同期される。
 - **Control Plane** は Terraform（`terraform/konnect`）で作成し、k8s からは Mirror として参照。
 
-## クイックスタート（Minikube）
+### クイックスタート（Minikube）
 
 ```bash
 # 0. 前提: minikube 起動、kubectl / helm / terraform が利用可能
@@ -71,21 +100,6 @@ curl -X POST http://localhost:8080/simulation/simulations \
 ```
 
 詳細な手順・トラブルシューティングは [docs/INSTRUCTIONS.md](docs/INSTRUCTIONS.md) を参照してください。
-
-## ドキュメント
-
-- [docs/DATA.md](docs/DATA.md) — データモデル定義と設計判断の記録
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — 全体構成・技術選定・ディレクトリ構成
-- [docs/INSTRUCTIONS.md](docs/INSTRUCTIONS.md) — 環境構築の詳細手順（Minikube / Kong Operator / Konnect）
-- [CLAUDE.md](CLAUDE.md) — 本リポジトリでの取り決め・作業方針
-
-## 技術スタック
-
-- **バックエンド**: Python 3.13 / FastAPI（OpenAPI 3.1 を自動生成）
-- **API Gateway**: Kong Gateway Enterprise 3.15（Konnect Hybrid mode / Data Plane）
-- **ゲートウェイ管理**: Kong Operator（`KonnectExtension` / `KongService` / `KongRoute` 等の CRD）
-- **IaC**: Terraform（Kong/konnect provider で Control Plane を作成）
-- **実行環境**: Kubernetes（ローカル検証は Minikube）
 
 ## ディレクトリ構成
 
