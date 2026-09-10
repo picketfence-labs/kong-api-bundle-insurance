@@ -2,42 +2,9 @@
 
 ## 全体構成
 
-```mermaid
-flowchart TB
-  client(["Client"])
-  tf["Terraform<br/>terraform/konnect"]
+[![kong-api-bundle-insurance 詳細アーキテクチャ](images/architecture-detailed.png)](https://picketfence-labs.github.io/diagrams/1bb15f0cce59/)
 
-  subgraph konnect["Kong Konnect (Control Plane: kong-insurance-demo / US)"]
-    cp["Service / Route を保持<br/>(CRD から同期)"]
-  end
-
-  subgraph k8s["Kubernetes namespace: insurance"]
-    operator["Kong Operator"]
-    crd["KongService / KongRoute (CRD)"]
-    dp["Kong Gateway (Data Plane)<br/>3.15 / hybrid mode<br/>プロキシのみ (DBレス)"]
-    subgraph backend["バックエンド (FastAPI / Deployment :8000)"]
-      product["product"]
-      customer["customer"]
-      simulation["simulation<br/>(計算のみ)"]
-      application["application"]
-      policy["policy"]
-      claim["claim"]
-    end
-  end
-
-  tf -- "CP を作成" --> cp
-  crd -- "Operator が同期" --> operator
-  operator -- "Konnect API" --> cp
-  operator -- "DataPlane を管理<br/>DP証明書を自動発行" --> dp
-  cp -- "設定配信・テレメトリ (mTLS)" --> dp
-  client --> dp
-  dp -- "/product" --> product
-  dp -- "/customer" --> customer
-  dp -- "/simulation" --> simulation
-  dp -- "/application" --> application
-  dp -- "/policy" --> policy
-  dp -- "/claim" --> claim
-```
+画像クリックでインタラクティブ版（パン・ズーム・検索対応）を開けます。
 
 - **Kong Konnect** が Control Plane。Control Plane 自体は Terraform（`terraform/konnect`）で作成し、k8s からは Mirror として参照する。
 - **Kong Operator** が Kubernetes 上で Kong Gateway (Data Plane) を管理し、Konnect への接続（`KonnectExtension`）と DP クライアント証明書の自動発行を担う。

@@ -26,14 +26,10 @@ Picketfence Labs Vault（Obsidianの管理ノート）の `Dev Design Brief Temp
 **バージョニング方式**: リポジトリ全体で単一のバージョン番号を採用。判断基準: 現状6サービスは密結合な単一デモ環境として一体的にリリースされており、サービス毎の独立バージョニングは6種類のタグ運用・Change Log管理の複雑さに対して現時点でメリットが薄いという判断（詳細: [ADR 0001](decisions/0001-versioning-granularity.md)）。
 
 **CIパイプライン概要**:
-```mermaid
-flowchart LR
-  pr["PR: services/等への変更"] -->|merge| main["main"]
-  main --> bump["バージョン自動インクリメント(patch)"]
-  bump --> build["6サービスのDockerイメージbuild"]
-  build --> push["GHCRへpush(タグ: vX.Y.Z + latest)"]
-  push --> release["GitHub Release作成 + CHANGELOG.md更新"]
-```
+
+[![リリースパイプライン概要 (release.yml)](images/release-pipeline.png)](https://picketfence-labs.github.io/diagrams/cba01a3d3f3f/)
+
+画像クリックでインタラクティブ版（パン・ズーム・検索対応）を開けます。
 
 **レジストリ・命名**: 公開イメージはGHCR一本化（詳細: [ADR 0004](decisions/0004-container-registry-choice.md)）。イメージ名は既存のローカルタグ命名（`insurance-${svc}`）を踏襲し、`ghcr.io/picketfence-labs/insurance-<service>` とする想定（正式名称は実装タスクで確定）。
 

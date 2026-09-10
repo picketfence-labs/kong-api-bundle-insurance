@@ -42,17 +42,9 @@
 
 ## ER図（サービス間の関係）
 
-```mermaid
-erDiagram
-  PRODUCT ||--o{ APPLICATION : "対象商品"
-  CUSTOMER ||--o{ APPLICATION : "申込者"
-  PRODUCT ||--o{ POLICY : "契約商品"
-  CUSTOMER ||--o{ POLICY : "契約者"
-  APPLICATION ||--o| POLICY : "契約化 (成立分のみ)"
-  POLICY ||--o{ CLAIM : "請求対象"
-  CUSTOMER ||--o{ CLAIM : "請求者(参照)"
-  PRODUCT ||--o{ SIMULATION : "試算対象(非永続)"
-```
+[![kong-api-bundle-insurance データモデル (ER図)](images/data-model.png)](https://picketfence-labs.github.io/diagrams/c5bfcf04d3a2/)
+
+画像クリックでインタラクティブ版（パン・ズーム・検索対応）を開けます。カーディナリティはエッジラベルに `(1:0..多)` 等の形式で明記しています。
 
 ---
 
