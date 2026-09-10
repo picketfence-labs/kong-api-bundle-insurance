@@ -52,16 +52,9 @@ application / policy / claim）を公開しているリポジトリです。す�
 
 ### アーキテクチャ概要
 
-```mermaid
-flowchart TB
-  client(["Client"]) --> dp["Kong DP (Data Plane)<br/>Kong Operator が管理"]
-  konnect["Kong Konnect<br/>Control Plane"] -. "設定同期 / mTLS" .-> dp
-  crd["KongService / KongRoute (CRD)"] -- "Operator が同期" --> konnect
-  tf["Terraform"] -- "CP を作成" --> konnect
-  subgraph ns["Kubernetes namespace: insurance"]
-    dp --> product & customer & simulation & application & policy & claim
-  end
-```
+[![kong-api-bundle-insurance 全体構成概要](docs/images/architecture-overview.png)](https://picketfence-labs.github.io/diagrams/24870d423a48/)
+
+画像クリックでインタラクティブ版（パン・ズーム・検索対応）を開けます。
 
 - **6サービス**は FastAPI 製で、Kubernetes の Deployment/Service として稼働。
 - **Kong Gateway (Data Plane)** は Kong Operator が管理し、Konnect に hybrid mode で接続。

@@ -24,7 +24,12 @@ Kong Gateway Enterprise 3.15 + Kong Konnect を前段に置き、損害保険ド
 | `docs/troubleshooting-log.md` | 実装中に想定通りに動かなかったこと（エラー・仕様の相違・プロセスの摩擦等）を漏れなく記録するログ。判断ポイントかどうかに関わらず、その場で追記する |
 
 - `README.md`・`CLAUDE.md`・`CHANGELOG.md`（OSSエコシステムの慣習上の例外）**以外**のドキュメントは `docs/` 配下に置く。
-- **ダイアグラムはすべて mermaid 形式で記述する**（```` ```mermaid ````）。ASCIIアートは使わない。GitHub・claude.ai のどちらでもレンダリングされる構文を用いる。
+- **ダイアグラムは Archify（`~/.claude/skills/archify`）で作成する（2026-09-10、mermaidから移行。詳細・判断根拠: [ADR 0010](docs/decisions/0010-diagram-tool-mermaid-to-archify.md)）**。ASCIIアートは使わない。
+  - GitHub は Markdown 内の `<iframe>`/`<script>` 等をサニタイズするため、Archifyが生成するインタラクティブHTMLを直接埋め込むことはできない。運用は「静的PNG埋め込み＋インタラクティブ版へのリンク併用」方式に統一する:
+    1. `archify` skillでJSON IR作成 → `validate --quality showcase`（9チェック・エラー0・警告0）→ `deliver`でHTML確定 → `visual-check`で自動視覚チェック
+    2. ノート埋め込み用PNGを `?present=1&embed=1` クエリ付きでスクリーンショット書き出しし、本リポジトリの `docs/images/` に保存
+    3. 生成HTMLは `picketfence-labs/diagrams`（GitHub Pages、Public）へ公開し、Markdown側は `[![タイトル](docs/images/xxx.png)](https://picketfence-labs.github.io/diagrams/<slug>/)` の形式でPNGをインタラクティブ版HTMLへのリンクにする
+  - ダイアグラムのソース（JSON IR）は本リポジトリには含めない。開発元のPicketfence Labs Vault（社内Private運用）側で正本を管理する
 
 ## 設計・実装の方針
 

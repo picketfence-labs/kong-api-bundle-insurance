@@ -4,14 +4,9 @@
 **Kong Operator** が管理し、Service/Route は Kong Operator の CRD で定義します。
 Control Plane は Terraform で作成し、ローカル検証には Minikube を使います。
 
-```mermaid
-flowchart LR
-  s0["0. 前提ツール"] --> s1["1. テストデータ生成"]
-  s1 --> s3["2. Kong Operator導入"]
-  s3 --> s4["3. Konnect CP作成<br/>(Terraform)"]
-  s4 --> s5["4. K8sデプロイ<br/>(GHCRからpull)"]
-  s5 --> s6["5. 動作確認"]
-```
+[![kong-api-bundle-insurance セットアップ手順（Minikube）](images/setup-steps.png)](https://picketfence-labs.github.io/diagrams/e8823945c392/)
+
+画像クリックでインタラクティブ版（パン・ズーム・検索対応）を開けます。
 
 ## 0. 前提ツール
 
