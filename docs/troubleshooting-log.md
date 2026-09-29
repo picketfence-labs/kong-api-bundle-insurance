@@ -16,6 +16,39 @@
 
 ---
 
+## 2026-09-29 OpenAPI の Service URL 更新 GitHub 参照先へ直接接続できなかった
+- **何を期待していたか**: 指定された `konnect-code-mode-mcp/deploy/insurance` の内容を GitHub から確認する
+- **実際どうだったか**: Web 取得は cache miss、`gh api` は `error connecting to api.github.com` で失敗した
+- **原因**: この実行環境から GitHub へのネットワーク接続が利用できないため
+- **対処・回避方法**: ローカルの `../konnect-code-mode-mcp/deploy/insurance/README.md` と `services.yaml` を読み、上流 URL と Service 定義を確認した
+
+## 2026-09-29 OpenAPI 生成スクリプトの lint で `ruff` が見つからなかった
+- **何を期待していたか**: `rtk ruff check scripts/export_openapi.py` で lint を実行できる
+- **実際どうだったか**: `Failed to spawn process: No such file or directory` で失敗した
+- **原因**: `ruff` が PATH にもリポジトリの `.venv/bin/` にもないため
+- **対処・回避方法**: lint は実行できなかった。Python のコンパイル確認、生成スクリプトの実行と再生成の同一性確認で変更箇所を検証する
+
+## 2026-09-29 OpenAPI Service URL 更新時の指示・権限・連携ドキュメントの摩擦
+- 特になし
+
+## 2026-09-29 OpenAPI URL 更新 PR 作成時に GitHub CLI の認証が失効していた
+- **何を期待していたか**: `gh auth status` で認証済みと確認でき、PR を作成できる
+- **実際どうだったか**: `The token in .../gh/hosts.yml is invalid` と表示された
+- **原因**: GitHub CLI に保存されたトークンが失効しているため
+- **対処・回避方法**: 今回の変更を独立したローカルブランチに準備し、Git push と PR 作成が可能か別途確認する。認証が必要なら再ログイン後に実行する
+
+## 2026-09-29 OpenAPI URL 更新 PR 作成時に GitHub の名前解決が失敗した
+- **何を期待していたか**: `git ls-remote --heads origin main` でリモートの最新状態を確認できる
+- **実際どうだったか**: `Could not resolve host: github.com` で失敗した
+- **原因**: この実行環境から GitHub の DNS またはネットワーク接続が利用できないため
+- **対処・回避方法**: ローカルにある `origin/main` を起点に独立ブランチを作成する。push 前にリモートとの差分を再確認する
+
+## 2026-09-29 OpenAPI URL 更新用の worktree 作成が `.git` の書込制限で失敗した
+- **何を期待していたか**: `git worktree add -b feat/openapi-k8s-service-urls ... origin/main` で独立した作業ツリーを作成できる
+- **実際どうだったか**: `cannot lock ref ... unable to create directory for .git/refs/heads/...` で失敗した
+- **原因**: 実行環境の `.git` 書込制限と考えられる
+- **対処・回避方法**: 権限昇格が認められる場合に同じ操作を再実行する
+
 ## 2026-09-03 コンテナ化・CI実装 branch protectionがbotのpushも一律拒否
 - **何を期待していたか**: release automationワークフローがバージョン管理ファイル（`CHANGELOG.md`）を`main`へ直接コミットできること
 - **実際どうだったか**: PR #1のテストで確認済みの`main`のbranch protection（`required_pull_request_reviews`設定、`enforce_admins: true`）は、`GITHUB_TOKEN`によるbotのpushも例外なくGH006で拒否する（`gh api repos/.../branches/main/protection`で確認。bypassリストは classic branch protection には存在せず、Rulesetsでのみ設定可能）

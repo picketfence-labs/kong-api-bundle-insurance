@@ -388,5 +388,5 @@ tags:
 - name: claims
   description: 保険金請求の参照・管理
 servers:
-- url: https://api.example.com/claim
-  description: Kong Gateway 経由(本番想定)
+- url: http://claim.insurance.svc.cluster.local:8000
+  description: Kubernetes クラスタ内の Service
