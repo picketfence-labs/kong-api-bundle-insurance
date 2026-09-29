@@ -77,6 +77,11 @@
 - **実際どうだったか**: `.git/index.lock`の作成が`Operation not permitted`となり失敗した
 - **対処・回避方法**: 同じ対象を権限昇格付きでstageする。未追跡の`.DS_Store`と`AGENTS.md`は対象に含めない
 
+## 2026-09-29 OpenAPI英語化PR作成でGitHub CLIがAPIに接続できなかった
+- **何を期待していたか**: `gh pr create`でpush済みのfeatureブランチからPRを作成できること
+- **実際どうだったか**: `error connecting to api.github.com`で失敗した
+- **対処・回避方法**: GitHubのWeb UIからPRを作成する
+
 ## 2026-09-03 コンテナ化・CI実装 branch protectionがbotのpushも一律拒否
 - **何を期待していたか**: release automationワークフローがバージョン管理ファイル（`CHANGELOG.md`）を`main`へ直接コミットできること
 - **実際どうだったか**: PR #1のテストで確認済みの`main`のbranch protection（`required_pull_request_reviews`設定、`enforce_admins: true`）は、`GITHUB_TOKEN`によるbotのpushも例外なくGH006で拒否する（`gh api repos/.../branches/main/protection`で確認。bypassリストは classic branch protection には存在せず、Rulesetsでのみ設定可能）
