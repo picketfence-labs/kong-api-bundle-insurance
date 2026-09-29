@@ -6,6 +6,15 @@
 （詳細・判断根拠: [docs/design-brief.md](docs/design-brief.md)、[ADR 0002](docs/decisions/0002-changelog-method.md)、[ADR 0005](docs/decisions/0005-changelog-commit-mechanism.md)）。手動でセクションを追記する場合も、このファイルの直下（マーカーコメントの直後）に追加すること。
 
 <!-- CHANGELOG_INSERT_MARKER: 新しいバージョンのセクションはこの直後に追記される -->
+## [v0.1.3] - 2026-09-29
+
+## What's Changed
+* docs: CHANGELOG.md に v0.1.2 を追記 by @github-actions[bot] in https://github.com/picketfence-labs/kong-api-bundle-insurance/pull/20
+* docs: English property insurance OpenAPI descriptions for search by @shinichi-hashitani in https://github.com/picketfence-labs/kong-api-bundle-insurance/pull/21
+
+
+**Full Changelog**: https://github.com/picketfence-labs/kong-api-bundle-insurance/compare/v0.1.2...v0.1.3
+
 ## [v0.1.2] - 2026-09-29
 
 ## What's Changed
