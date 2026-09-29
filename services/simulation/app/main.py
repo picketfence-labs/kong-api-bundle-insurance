@@ -13,40 +13,41 @@ from common import premium
 from common.products import PRODUCTS_BY_ID
 
 app = FastAPI(
-    title="保険料試算サービス (Simulation Service)",
+    title="Property Insurance Premium Simulation API",
     description=(
-        "保険料を試算するステートレスAPI。データは永続化せず、入力に応じて都度計算します。"
-        "契約(policy)サービスの保険料と同一の算出ロジックを用います。"
+        "Calculate a property insurance premium simulation (simulations) for an insurance product "
+        "using customer age, sum insured, and smoking status. The API does not store simulations "
+        "and uses the same premium calculation as insurance policies."
     ),
     version="1.0.0",
-    openapi_tags=[{"name": "simulation", "description": "保険料の試算"}],
+    openapi_tags=[{"name": "simulation", "description": "Calculate property insurance premium simulation (simulations) and quotes."}],
 )
 
 
 class SimulationRequest(BaseModel):
-    product_id: str = Field(..., description="試算対象商品(商品ID)", examples=["PRD-004"])
-    birth_date: str = Field(..., description="生年月日(YYYY-MM-DD)。年齢計算に使用", examples=["1985-04-12"])
-    gender: str = Field("回答しない", description="性別", examples=["男性"])
-    sum_insured: int = Field(..., description="希望保険金額(円)", examples=[3000000])
-    payment_period: str | None = Field(None, description="払込期間", examples=["1年（自動更新）"])
-    smoker_flag: bool = Field(False, description="喫煙の有無(医療・傷害保険で保険料に影響)")
+    product_id: str = Field(..., description="Insurance product ID to quote or simulate (PRD-NNN).", examples=["PRD-004"])
+    birth_date: str = Field(..., description="Customer's date of birth (YYYY-MM-DD), used to calculate age for the insurance premium.", examples=["1985-04-12"])
+    gender: str = Field("回答しない", description="Customer's gender, retained in the simulation request. Values remain in Japanese.", examples=["男性"])
+    sum_insured: int = Field(..., description="Requested insurance coverage amount or sum insured in Japanese yen.", examples=[3000000])
+    payment_period: str | None = Field(None, description="Requested insurance premium payment period; retained in the simulation request.", examples=["1年（自動更新）"])
+    smoker_flag: bool = Field(False, description="Whether the customer smokes; increases premiums for medical and accident insurance.")
 
 
 class Breakdown(BaseModel):
-    base_annual: int = Field(..., description="年間ベース保険料(円)")
-    variable_annual: int = Field(..., description="保険金額比例部分の年間保険料(円)")
-    smoker_surcharge: int = Field(..., description="喫煙割増(円)")
-    age_factor: float = Field(..., description="年齢係数")
+    base_annual: int = Field(..., description="Base annual insurance premium in Japanese yen.")
+    variable_annual: int = Field(..., description="Annual insurance premium component proportional to the sum insured, in Japanese yen.")
+    smoker_surcharge: int = Field(..., description="Annual smoker surcharge for medical or accident insurance, in Japanese yen.")
+    age_factor: float = Field(..., description="Age factor used in the insurance premium calculation.")
 
 
 class SimulationResponse(BaseModel):
     product_id: str
     product_name: str
     category: str
-    age: int = Field(..., description="試算基準日時点の年齢")
+    age: int = Field(..., description="Customer's age on the simulation date.")
     sum_insured: int
-    monthly_premium: int = Field(..., description="月額保険料(円)")
-    annual_premium: int = Field(..., description="年額保険料(円)")
+    monthly_premium: int = Field(..., description="Estimated monthly insurance premium in Japanese yen.")
+    annual_premium: int = Field(..., description="Estimated annual insurance premium in Japanese yen.")
     breakdown: Breakdown
 
 
@@ -57,12 +58,12 @@ def _calc_age(birth: date, as_of: date) -> int:
     return years
 
 
-@app.get("/health", tags=["health"], summary="ヘルスチェック")
+@app.get("/health", tags=["health"], summary="Check service health")
 def health():
     return {"status": "ok", "service": "simulation"}
 
 
-@app.post("/simulations", response_model=SimulationResponse, tags=["simulation"], summary="保険料の試算")
+@app.post("/simulations", response_model=SimulationResponse, tags=["simulation"], summary="Calculate an insurance premium", description="Create a property insurance premium simulation (simulations) or quote for a product and requested sum insured. Returns monthly and annual premium estimates without storing the result.")
 def simulate(req: SimulationRequest):
     product = PRODUCTS_BY_ID.get(req.product_id)
     if product is None:
