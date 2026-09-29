@@ -530,5 +530,5 @@ tags:
 - name: customers
   description: 顧客マスタの参照・管理
 servers:
-- url: https://api.example.com/customer
-  description: Kong Gateway 経由(本番想定)
+- url: http://customer.insurance.svc.cluster.local:8000
+  description: Kubernetes クラスタ内の Service

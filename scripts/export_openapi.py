@@ -21,23 +21,15 @@ except ModuleNotFoundError:
 
 SERVICES = ["product", "customer", "simulation", "application", "policy", "claim"]
 
-# Kong Gateway 経由でアクセスする際のベースパス(route の path と対応させる)
-BASE_PATHS = {
-    "product": "/product",
-    "customer": "/customer",
-    "simulation": "/simulation",
-    "application": "/application",
-    "policy": "/policy",
-    "claim": "/claim",
-}
-
-
 def main():
     for service in SERVICES:
         module = importlib.import_module(f"services.{service}.app.main")
         schema = module.app.openapi()
         schema["servers"] = [
-            {"url": f"https://api.example.com{BASE_PATHS[service]}", "description": "Kong Gateway 経由(本番想定)"},
+            {
+                "url": f"http://{service}.insurance.svc.cluster.local:8000",
+                "description": "Kubernetes クラスタ内の Service",
+            },
         ]
         out_path = ROOT / "services" / service / "openapi.yaml"
         out_path.write_text(

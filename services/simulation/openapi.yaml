@@ -192,5 +192,5 @@ tags:
 - name: simulation
   description: 保険料の試算
 servers:
-- url: https://api.example.com/simulation
-  description: Kong Gateway 経由(本番想定)
+- url: http://simulation.insurance.svc.cluster.local:8000
+  description: Kubernetes クラスタ内の Service
