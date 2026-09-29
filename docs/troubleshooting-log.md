@@ -49,6 +49,12 @@
 - **原因**: 実行環境の `.git` 書込制限と考えられる
 - **対処・回避方法**: 権限昇格が認められる場合に同じ操作を再実行する
 
+## 2026-09-29 元の作業ブランチから編集コピーを戻す際に `git restore` が失敗した
+- **何を期待していたか**: PR 用ブランチへ移した変更だけを元の作業ブランチから戻せる
+- **実際どうだったか**: `git restore` が `.git/index.lock` の作成で `Operation not permitted` となった
+- **原因**: 実行環境の `.git` 書込制限による
+- **対処・回避方法**: `git show HEAD:<path>` で元の内容を読み、対象の8ファイルのみ復元する
+
 ## 2026-09-03 コンテナ化・CI実装 branch protectionがbotのpushも一律拒否
 - **何を期待していたか**: release automationワークフローがバージョン管理ファイル（`CHANGELOG.md`）を`main`へ直接コミットできること
 - **実際どうだったか**: PR #1のテストで確認済みの`main`のbranch protection（`required_pull_request_reviews`設定、`enforce_admins: true`）は、`GITHUB_TOKEN`によるbotのpushも例外なくGH006で拒否する（`gh api repos/.../branches/main/protection`で確認。bypassリストは classic branch protection には存在せず、Rulesetsでのみ設定可能）
