@@ -1,17 +1,20 @@
 openapi: 3.1.0
 info:
-  title: 顧客サービス (Customer Service)
-  description: '個人顧客マスタを提供するAPI。氏名・住所・連絡先・マイナンバー・口座情報を管理します。
+  title: Property Insurance Customer API
+  description: 'Manage property insurance customer (customers) and policyholder records.
+    Find personal details, Japanese addresses, contact information, My Number, and
+    bank accounts used by insurance applications, policies, and claims.
 
 
-    **マイナンバーの扱い:** 現バージョンでは`my_number`をフル桁でそのまま返却します。将来的に利用者の権限(ロール)に応じてraw/maskedを切り替える予定です。'
+    **My Number:** The current API returns the full `my_number` value. A future version
+    may return a raw or masked value based on the caller''s role.'
   version: 1.0.0
 paths:
   /health:
     get:
       tags:
       - health
-      summary: ヘルスチェック
+      summary: Check service health
       operationId: health_health_get
       responses:
         '200':
@@ -23,7 +26,9 @@ paths:
     get:
       tags:
       - customers
-      summary: 顧客一覧の取得
+      summary: List insurance customers
+      description: List property insurance customer (customers) and policyholders,
+        optionally filtered by Japanese prefecture or gender.
       operationId: list_customers_customers_get
       parameters:
       - name: prefecture
@@ -33,9 +38,11 @@ paths:
           anyOf:
           - type: string
           - type: 'null'
-          description: 都道府県で絞り込み
+          description: Filter insurance customers by Japanese prefecture of residence.
+            Values remain in Japanese.
           title: Prefecture
-        description: 都道府県で絞り込み
+        description: Filter insurance customers by Japanese prefecture of residence.
+          Values remain in Japanese.
       - name: gender
         in: query
         required: false
@@ -43,17 +50,19 @@ paths:
           anyOf:
           - type: string
           - type: 'null'
-          description: 性別で絞り込み
+          description: Filter insurance customers by gender. Values remain in Japanese.
           title: Gender
-        description: 性別で絞り込み
+        description: Filter insurance customers by gender. Values remain in Japanese.
       - name: skip
         in: query
         required: false
         schema:
           type: integer
           minimum: 0
+          description: Number of insurance customers to skip for pagination.
           default: 0
           title: Skip
+        description: Number of insurance customers to skip for pagination.
       - name: limit
         in: query
         required: false
@@ -61,8 +70,10 @@ paths:
           type: integer
           maximum: 100
           minimum: 1
+          description: Maximum number of insurance customers to return (1 to 100).
           default: 50
           title: Limit
+        description: Maximum number of insurance customers to return (1 to 100).
       responses:
         '200':
           description: Successful Response
@@ -79,7 +90,9 @@ paths:
     post:
       tags:
       - customers
-      summary: 顧客の新規登録
+      summary: Create an insurance customer
+      description: Register a property insurance customer with personal, contact,
+        address, and bank account details.
       operationId: create_customer_customers_post
       requestBody:
         required: true
@@ -104,7 +117,9 @@ paths:
     get:
       tags:
       - customers
-      summary: 顧客の取得
+      summary: Get an insurance customer
+      description: Get one property insurance customer or policyholder by customer
+        ID.
       operationId: get_customer_customers__customer_id__get
       parameters:
       - name: customer_id
@@ -112,7 +127,9 @@ paths:
         required: true
         schema:
           type: string
+          description: ID of the insurance customer to retrieve (CUS-NNNNNN).
           title: Customer Id
+        description: ID of the insurance customer to retrieve (CUS-NNNNNN).
       responses:
         '200':
           description: Successful Response
@@ -129,7 +146,8 @@ paths:
     put:
       tags:
       - customers
-      summary: 顧客の更新
+      summary: Update an insurance customer
+      description: Replace a property insurance customer record by customer ID.
       operationId: update_customer_customers__customer_id__put
       parameters:
       - name: customer_id
@@ -137,7 +155,9 @@ paths:
         required: true
         schema:
           type: string
+          description: ID of the insurance customer to update (CUS-NNNNNN).
           title: Customer Id
+        description: ID of the insurance customer to update (CUS-NNNNNN).
       requestBody:
         required: true
         content:
@@ -160,7 +180,8 @@ paths:
     delete:
       tags:
       - customers
-      summary: 顧客の削除
+      summary: Delete an insurance customer
+      description: Delete a property insurance customer record by customer ID.
       operationId: delete_customer_customers__customer_id__delete
       parameters:
       - name: customer_id
@@ -168,7 +189,9 @@ paths:
         required: true
         schema:
           type: string
+          description: ID of the insurance customer to delete (CUS-NNNNNN).
           title: Customer Id
+        description: ID of the insurance customer to delete (CUS-NNNNNN).
       responses:
         '204':
           description: Successful Response
@@ -185,25 +208,25 @@ components:
         bank_name:
           type: string
           title: Bank Name
-          description: 銀行名
+          description: Name of the customer's bank.
           examples:
           - みずほ銀行
         branch_name:
           type: string
           title: Branch Name
-          description: 支店名
+          description: Name of the bank branch.
           examples:
           - 渋谷支店
         account_type:
           type: string
           title: Account Type
-          description: 預金種別
+          description: Type of bank deposit account.
           examples:
           - 普通
         account_number:
           type: string
           title: Account Number
-          description: 口座番号(7桁)
+          description: Seven-digit bank account number.
           examples:
           - '1234567'
       type: object
@@ -218,67 +241,68 @@ components:
         last_name:
           type: string
           title: Last Name
-          description: 姓
+          description: Customer's family name.
           examples:
           - 山田
         first_name:
           type: string
           title: First Name
-          description: 名
+          description: Customer's given name.
           examples:
           - 太郎
         last_name_kana:
           type: string
           title: Last Name Kana
-          description: 姓(全角カナ)
+          description: Family name in full-width katakana.
           examples:
           - ヤマダ
         first_name_kana:
           type: string
           title: First Name Kana
-          description: 名(全角カナ)
+          description: Given name in full-width katakana.
           examples:
           - タロウ
         birth_date:
           type: string
           title: Birth Date
-          description: 生年月日(YYYY-MM-DD)
+          description: Customer's date of birth (YYYY-MM-DD).
           examples:
           - '1985-04-12'
         gender:
           type: string
           title: Gender
-          description: 性別
+          description: Customer's gender. Values remain in Japanese.
           examples:
           - 男性
         my_number:
           type: string
           title: My Number
-          description: マイナンバー(12桁・ダミー)
+          description: Twelve-digit Japanese My Number; sample values are fictitious.
           examples:
           - '123456789018'
         postal_code:
           type: string
           title: Postal Code
-          description: 郵便番号(NNN-NNNN)
+          description: Japanese postal code (NNN-NNNN).
           examples:
           - 150-0002
         prefecture:
           type: string
           title: Prefecture
-          description: 都道府県
+          description: Japanese prefecture in the customer's address; also filters
+            customers by location.
           examples:
           - 東京都
         city:
           type: string
           title: City
-          description: 市区町村
+          description: City, ward, or municipality in the customer's Japanese address.
           examples:
           - 渋谷区
         address_line:
           type: string
           title: Address Line
-          description: 番地・建物名
+          description: Street address and building name.
           examples:
           - 1-2-3 パークタワー
         phone_number:
@@ -286,17 +310,17 @@ components:
           - type: string
           - type: 'null'
           title: Phone Number
-          description: 固定電話番号
+          description: Customer's landline phone number.
         mobile_number:
           type: string
           title: Mobile Number
-          description: 携帯電話番号
+          description: Customer's mobile phone number.
           examples:
           - 090-1234-5678
         email:
           type: string
           title: Email
-          description: メールアドレス
+          description: Customer's email address.
           examples:
           - taro@example.com
         occupation:
@@ -304,26 +328,26 @@ components:
           - type: string
           - type: 'null'
           title: Occupation
-          description: 職業
+          description: Customer's occupation.
         annual_income:
           anyOf:
           - type: integer
           - type: 'null'
           title: Annual Income
-          description: 年収(円)
+          description: Customer's annual income in Japanese yen.
         bank_account:
           anyOf:
           - $ref: '#/components/schemas/BankAccount'
           - type: 'null'
-          description: 口座情報
+          description: Customer's bank account information.
         customer_since:
           type: string
           title: Customer Since
-          description: 顧客登録日(YYYY-MM-DD)
+          description: Date the insurance customer was registered (YYYY-MM-DD).
         customer_id:
           type: string
           title: Customer Id
-          description: 顧客ID(CUS-NNNNNN)
+          description: Insurance customer ID (CUS-NNNNNN).
           examples:
           - CUS-000001
         created_at:
@@ -357,67 +381,68 @@ components:
         last_name:
           type: string
           title: Last Name
-          description: 姓
+          description: Customer's family name.
           examples:
           - 山田
         first_name:
           type: string
           title: First Name
-          description: 名
+          description: Customer's given name.
           examples:
           - 太郎
         last_name_kana:
           type: string
           title: Last Name Kana
-          description: 姓(全角カナ)
+          description: Family name in full-width katakana.
           examples:
           - ヤマダ
         first_name_kana:
           type: string
           title: First Name Kana
-          description: 名(全角カナ)
+          description: Given name in full-width katakana.
           examples:
           - タロウ
         birth_date:
           type: string
           title: Birth Date
-          description: 生年月日(YYYY-MM-DD)
+          description: Customer's date of birth (YYYY-MM-DD).
           examples:
           - '1985-04-12'
         gender:
           type: string
           title: Gender
-          description: 性別
+          description: Customer's gender. Values remain in Japanese.
           examples:
           - 男性
         my_number:
           type: string
           title: My Number
-          description: マイナンバー(12桁・ダミー)
+          description: Twelve-digit Japanese My Number; sample values are fictitious.
           examples:
           - '123456789018'
         postal_code:
           type: string
           title: Postal Code
-          description: 郵便番号(NNN-NNNN)
+          description: Japanese postal code (NNN-NNNN).
           examples:
           - 150-0002
         prefecture:
           type: string
           title: Prefecture
-          description: 都道府県
+          description: Japanese prefecture in the customer's address; also filters
+            customers by location.
           examples:
           - 東京都
         city:
           type: string
           title: City
-          description: 市区町村
+          description: City, ward, or municipality in the customer's Japanese address.
           examples:
           - 渋谷区
         address_line:
           type: string
           title: Address Line
-          description: 番地・建物名
+          description: Street address and building name.
           examples:
           - 1-2-3 パークタワー
         phone_number:
@@ -425,17 +450,17 @@ components:
           - type: string
           - type: 'null'
           title: Phone Number
-          description: 固定電話番号
+          description: Customer's landline phone number.
         mobile_number:
           type: string
           title: Mobile Number
-          description: 携帯電話番号
+          description: Customer's mobile phone number.
           examples:
           - 090-1234-5678
         email:
           type: string
           title: Email
-          description: メールアドレス
+          description: Customer's email address.
           examples:
           - taro@example.com
         occupation:
@@ -443,22 +468,22 @@ components:
           - type: string
           - type: 'null'
           title: Occupation
-          description: 職業
+          description: Customer's occupation.
         annual_income:
           anyOf:
           - type: integer
           - type: 'null'
           title: Annual Income
-          description: 年収(円)
+          description: Customer's annual income in Japanese yen.
         bank_account:
           anyOf:
           - $ref: '#/components/schemas/BankAccount'
           - type: 'null'
-          description: 口座情報
+          description: Customer's bank account information.
         customer_since:
           type: string
           title: Customer Since
-          description: 顧客登録日(YYYY-MM-DD)
+          description: Date the insurance customer was registered (YYYY-MM-DD).
       type: object
       required:
       - last_name
@@ -528,7 +553,7 @@ components:
       title: ValidationError
 tags:
 - name: customers
-  description: 顧客マスタの参照・管理
+  description: Read and manage property insurance customer (customers) and policyholders.
 servers:
 - url: http://customer.insurance.svc.cluster.local:8000
-  description: Kubernetes クラスタ内の Service
+  description: Service inside the Kubernetes cluster

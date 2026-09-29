@@ -55,6 +55,33 @@
 - **原因**: 実行環境の `.git` 書込制限による
 - **対処・回避方法**: `git show HEAD:<path>` で元の内容を読み、対象の8ファイルのみ復元する
 
+## 2026-09-29 OpenAPI英語化作業でfeatureブランチ作成がsandboxに拒否された
+- **何を期待していたか**: `git switch -c docs/openapi-english-insurance-search`で作業用ブランチを作成できること
+- **実際どうだったか**: `.git/refs/heads/...lock`の作成が`Operation not permitted`となり失敗した
+- **対処・回避方法**: 同じコマンドを権限昇格付きで再実行し、ブランチ作成に成功した
+- **影響**: ファイルの変更内容や既存の未追跡ファイルには影響なし
+
+## 2026-09-29 OpenAPI再生成でシステムPythonにFastAPIがなかった
+- **何を期待していたか**: `python3 scripts/export_openapi.py`で6件の仕様を再生成できること
+- **実際どうだったか**: `ModuleNotFoundError: No module named 'fastapi'`で停止した
+- **原因**: システムPythonにはFastAPIがインストールされていない
+- **対処・回避方法**: リポジトリの`.venv/bin/python`で再実行する
+
+## 2026-09-29 OpenAPI英語化のlintで仮想環境にもRuffがなかった
+- **何を期待していたか**: `.venv/bin/ruff check`で編集したPythonファイルを検査できること
+- **実際どうだったか**: `.venv/bin/ruff`が存在せず、実行できなかった
+- **対処・回避方法**: Pythonコンパイル、OpenAPI再生成、YAML検査、`git diff --check`で検証する
+
+## 2026-09-29 OpenAPI英語化の変更をstageする際に`.git/index.lock`で拒否された
+- **何を期待していたか**: 変更対象の14ファイルだけを`git add`でstageできること
+- **実際どうだったか**: `.git/index.lock`の作成が`Operation not permitted`となり失敗した
+- **対処・回避方法**: 同じ対象を権限昇格付きでstageする。未追跡の`.DS_Store`と`AGENTS.md`は対象に含めない
+
+## 2026-09-29 OpenAPI英語化PR作成でGitHub CLIがAPIに接続できなかった
+- **何を期待していたか**: `gh pr create`でpush済みのfeatureブランチからPRを作成できること
+- **実際どうだったか**: `error connecting to api.github.com`で失敗した
+- **対処・回避方法**: GitHubのWeb UIからPRを作成する
+
 ## 2026-09-03 コンテナ化・CI実装 branch protectionがbotのpushも一律拒否
 - **何を期待していたか**: release automationワークフローがバージョン管理ファイル（`CHANGELOG.md`）を`main`へ直接コミットできること
 - **実際どうだったか**: PR #1のテストで確認済みの`main`のbranch protection（`required_pull_request_reviews`設定、`enforce_admins: true`）は、`GITHUB_TOKEN`によるbotのpushも例外なくGH006で拒否する（`gh api repos/.../branches/main/protection`で確認。bypassリストは classic branch protection には存在せず、Rulesetsでのみ設定可能）
@@ -121,6 +148,7 @@
 - **原因**: 上記2エントリの経緯の通り、GHCRパッケージのvisibility変更API自体が存在せず（ADR 0007）、この時点ではまだ利用者によるWeb UIでの手動public化が完了していなかったため
 - **対処・回避方法**: 利用者がWeb UI（Package settings画面の「Danger Zone」）から6パッケージ全てを手動でpublicに変更（ADR 0007の対応）。以後、既定タグ（`v0.1.1`）でのGHCR pullも6サービス全てで成功することをMinikube上で再確認済み（2026-09-04）
 - **コスト**: N/A
+
 
 ## 2026-09-05 OpenAPI Doc公開パイプライン実装着手時 ADR 0009が前提とした「Scalarの静的HTML生成CLI」が実在しない
 

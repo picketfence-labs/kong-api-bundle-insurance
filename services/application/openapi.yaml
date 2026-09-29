@@ -1,14 +1,16 @@
 openapi: 3.1.0
 info:
-  title: 申込サービス (Application Service)
-  description: 保険の申込を管理するAPI。審査ステータス(審査中/承認/却下/取消)と、承認時の契約IDを保持します。
+  title: Property Insurance Application API
+  description: Manage property insurance application (applications) submitted by customers
+    for insurance products. Track underwriting review status, requested coverage and
+    payment details, and the policy ID created when an application is approved.
   version: 1.0.0
 paths:
   /health:
     get:
       tags:
       - health
-      summary: ヘルスチェック
+      summary: Check service health
       operationId: health_health_get
       responses:
         '200':
@@ -20,7 +22,9 @@ paths:
     get:
       tags:
       - applications
-      summary: 申込一覧の取得
+      summary: List insurance applications
+      description: List property insurance application (applications), optionally
+        filtered by customer, product, or underwriting review status.
       operationId: list_applications_applications_get
       parameters:
       - name: customer_id
@@ -30,9 +34,9 @@ paths:
           anyOf:
           - type: string
           - type: 'null'
-          description: 顧客IDで絞り込み
+          description: Filter insurance applications by applicant customer ID (CUS-NNNNNN).
           title: Customer Id
-        description: 顧客IDで絞り込み
+        description: Filter insurance applications by applicant customer ID (CUS-NNNNNN).
       - name: product_id
         in: query
         required: false
@@ -40,9 +44,11 @@ paths:
           anyOf:
           - type: string
           - type: 'null'
-          description: 商品IDで絞り込み
+          description: Filter insurance applications by selected insurance product
+            ID (PRD-NNN).
           title: Product Id
-        description: 商品IDで絞り込み
+        description: Filter insurance applications by selected insurance product ID
+          (PRD-NNN).
       - name: status
         in: query
         required: false
@@ -50,17 +56,21 @@ paths:
           anyOf:
           - type: string
           - type: 'null'
-          description: ステータスで絞り込み
+          description: Filter insurance applications by underwriting review status.
+            Values remain in Japanese.
           title: Status
-        description: ステータスで絞り込み
+        description: Filter insurance applications by underwriting review status.
+          Values remain in Japanese.
       - name: skip
         in: query
         required: false
         schema:
           type: integer
           minimum: 0
+          description: Number of insurance applications to skip for pagination.
           default: 0
           title: Skip
+        description: Number of insurance applications to skip for pagination.
       - name: limit
         in: query
         required: false
@@ -68,8 +78,10 @@ paths:
           type: integer
           maximum: 100
           minimum: 1
+          description: Maximum number of insurance applications to return (1 to 100).
           default: 50
           title: Limit
+        description: Maximum number of insurance applications to return (1 to 100).
       responses:
         '200':
           description: Successful Response
@@ -86,7 +98,9 @@ paths:
     post:
       tags:
       - applications
-      summary: 申込の新規登録
+      summary: Create an insurance application
+      description: Submit a property insurance application for a customer and insurance
+        product.
       operationId: create_application_applications_post
       requestBody:
         required: true
@@ -111,7 +125,9 @@ paths:
     get:
       tags:
       - applications
-      summary: 申込の取得
+      summary: Get an insurance application
+      description: Get one property insurance application by application ID, including
+        its review outcome and resulting policy ID.
       operationId: get_application_applications__application_id__get
       parameters:
       - name: application_id
@@ -119,7 +135,9 @@ paths:
         required: true
         schema:
           type: string
+          description: ID of the insurance application to retrieve (APP-NNNNNN).
           title: Application Id
+        description: ID of the insurance application to retrieve (APP-NNNNNN).
       responses:
         '200':
           description: Successful Response
@@ -136,7 +154,9 @@ paths:
     put:
       tags:
       - applications
-      summary: 申込の更新
+      summary: Update an insurance application
+      description: Replace a property insurance application by application ID, including
+        its underwriting review status.
       operationId: update_application_applications__application_id__put
       parameters:
       - name: application_id
@@ -144,7 +164,9 @@ paths:
         required: true
         schema:
           type: string
+          description: ID of the insurance application to update (APP-NNNNNN).
           title: Application Id
+        description: ID of the insurance application to update (APP-NNNNNN).
       requestBody:
         required: true
         content:
@@ -167,7 +189,8 @@ paths:
     delete:
       tags:
       - applications
-      summary: 申込の削除
+      summary: Delete an insurance application
+      description: Delete a property insurance application by application ID.
       operationId: delete_application_applications__application_id__delete
       parameters:
       - name: application_id
@@ -175,7 +198,9 @@ paths:
         required: true
         schema:
           type: string
+          description: ID of the insurance application to delete (APP-NNNNNN).
           title: Application Id
+        description: ID of the insurance application to delete (APP-NNNNNN).
       responses:
         '204':
           description: Successful Response
@@ -192,52 +217,54 @@ components:
         customer_id:
           type: string
           title: Customer Id
-          description: 申込者(顧客ID)
+          description: Customer ID of the property insurance applicant.
           examples:
           - CUS-000001
         product_id:
           type: string
           title: Product Id
-          description: 申込商品(商品ID)
+          description: Insurance product ID selected in the application.
           examples:
           - PRD-001
         application_date:
           type: string
           title: Application Date
-          description: 申込日(YYYY-MM-DD)
+          description: Date the insurance application was submitted (YYYY-MM-DD).
         desired_sum_insured:
           type: integer
           title: Desired Sum Insured
-          description: 希望保険金額(円)
+          description: Requested insurance coverage amount or sum insured in Japanese
+            yen.
         desired_payment_period:
           type: string
           title: Desired Payment Period
-          description: 希望払込期間
+          description: Requested insurance premium payment period.
         payment_method:
           type: string
           title: Payment Method
-          description: 支払方法
+          description: Method for paying the insurance premium.
           examples:
           - 口座振替
         health_declaration:
           anyOf:
           - $ref: '#/components/schemas/HealthDeclaration'
           - type: 'null'
-          description: 告知内容(医療・傷害保険のみ)
+          description: Health declaration for medical or accident insurance applications.
         beneficiary:
           anyOf:
           - $ref: '#/components/schemas/Beneficiary'
           - type: 'null'
-          description: 受取人(傷害保険の死亡保障のみ)
+          description: Benefit beneficiary for accident insurance death coverage.
         insured_pet:
           anyOf:
           - $ref: '#/components/schemas/InsuredPet'
           - type: 'null'
-          description: 被保険動物(ペット保険のみ)
+          description: Pet covered by a pet insurance application.
         status:
           type: string
           title: Status
-          description: 審査ステータス
+          description: Insurance application underwriting review status. Values remain
+            in Japanese.
           examples:
           - 承認
         reviewed_at:
@@ -245,23 +272,24 @@ components:
           - type: string
           - type: 'null'
           title: Reviewed At
-          description: 審査完了日時
+          description: Date and time the insurance application review finished.
         rejection_reason:
           anyOf:
           - type: string
           - type: 'null'
           title: Rejection Reason
-          description: 却下理由(却下時のみ)
+          description: Reason the insurance application was rejected, if applicable.
         resulting_policy_id:
           anyOf:
           - type: string
           - type: 'null'
           title: Resulting Policy Id
-          description: 契約化された場合の契約ID
+          description: Policy ID created from an approved insurance application, if
+            applicable.
         application_id:
           type: string
           title: Application Id
-          description: 申込ID(APP-NNNNNN)
+          description: Insurance application ID (APP-NNNNNN).
           examples:
           - APP-000001
         created_at:
@@ -288,52 +316,54 @@ components:
         customer_id:
           type: string
           title: Customer Id
-          description: 申込者(顧客ID)
+          description: Customer ID of the property insurance applicant.
           examples:
           - CUS-000001
         product_id:
           type: string
           title: Product Id
-          description: 申込商品(商品ID)
+          description: Insurance product ID selected in the application.
           examples:
           - PRD-001
         application_date:
           type: string
           title: Application Date
-          description: 申込日(YYYY-MM-DD)
+          description: Date the insurance application was submitted (YYYY-MM-DD).
         desired_sum_insured:
           type: integer
           title: Desired Sum Insured
-          description: 希望保険金額(円)
+          description: Requested insurance coverage amount or sum insured in Japanese
+            yen.
         desired_payment_period:
           type: string
           title: Desired Payment Period
-          description: 希望払込期間
+          description: Requested insurance premium payment period.
         payment_method:
           type: string
           title: Payment Method
-          description: 支払方法
+          description: Method for paying the insurance premium.
           examples:
           - 口座振替
         health_declaration:
           anyOf:
           - $ref: '#/components/schemas/HealthDeclaration'
           - type: 'null'
-          description: 告知内容(医療・傷害保険のみ)
+          description: Health declaration for medical or accident insurance applications.
         beneficiary:
           anyOf:
           - $ref: '#/components/schemas/Beneficiary'
           - type: 'null'
-          description: 受取人(傷害保険の死亡保障のみ)
+          description: Benefit beneficiary for accident insurance death coverage.
         insured_pet:
           anyOf:
           - $ref: '#/components/schemas/InsuredPet'
           - type: 'null'
-          description: 被保険動物(ペット保険のみ)
+          description: Pet covered by a pet insurance application.
         status:
           type: string
           title: Status
-          description: 審査ステータス
+          description: Insurance application underwriting review status. Values remain
+            in Japanese.
           examples:
           - 承認
         reviewed_at:
@@ -341,19 +371,20 @@ components:
           - type: string
           - type: 'null'
           title: Reviewed At
-          description: 審査完了日時
+          description: Date and time the insurance application review finished.
         rejection_reason:
           anyOf:
           - type: string
           - type: 'null'
           title: Rejection Reason
-          description: 却下理由(却下時のみ)
+          description: Reason the insurance application was rejected, if applicable.
         resulting_policy_id:
           anyOf:
           - type: string
           - type: 'null'
           title: Resulting Policy Id
-          description: 契約化された場合の契約ID
+          description: Policy ID created from an approved insurance application, if
+            applicable.
       type: object
       required:
       - customer_id
@@ -384,11 +415,11 @@ components:
         name:
           type: string
           title: Name
-          description: 受取人氏名
+          description: Name of the insurance benefit beneficiary.
         relationship:
           type: string
           title: Relationship
-          description: 続柄
+          description: Beneficiary's relationship to the insured person.
           examples:
           - 配偶者
       type: object
@@ -410,13 +441,13 @@ components:
         has_pre_existing_condition:
           type: boolean
           title: Has Pre Existing Condition
-          description: 既往症の有無
+          description: Whether the applicant has a pre-existing medical condition.
         notes:
           anyOf:
           - type: string
           - type: 'null'
           title: Notes
-          description: 告知の補足
+          description: Additional health declaration or medical disclosure notes.
       type: object
       required:
       - has_pre_existing_condition
@@ -426,25 +457,25 @@ components:
         species:
           type: string
           title: Species
-          description: 種別
+          description: Species of the pet covered by pet insurance.
           examples:
           - 犬
         breed:
           type: string
           title: Breed
-          description: 品種
+          description: Breed of the insured pet.
           examples:
           - トイプードル
         name:
           type: string
           title: Name
-          description: ペットの名前
+          description: Name of the insured pet.
           examples:
           - ポチ
         age:
           type: integer
           title: Age
-          description: ペットの年齢
+          description: Age of the insured pet in years.
       type: object
       required:
       - species
@@ -480,7 +511,7 @@ components:
       title: ValidationError
 tags:
 - name: applications
-  description: 申込の参照・管理
+  description: Read and manage property insurance application (applications).
 servers:
 - url: http://application.insurance.svc.cluster.local:8000
-  description: Kubernetes クラスタ内の Service
+  description: Service inside the Kubernetes cluster

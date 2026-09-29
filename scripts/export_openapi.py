@@ -28,7 +28,7 @@ def main():
         schema["servers"] = [
             {
                 "url": f"http://{service}.insurance.svc.cluster.local:8000",
-                "description": "Kubernetes クラスタ内の Service",
+                "description": "Service inside the Kubernetes cluster",
             },
         ]
         out_path = ROOT / "services" / service / "openapi.yaml"

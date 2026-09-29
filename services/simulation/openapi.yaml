@@ -1,14 +1,17 @@
 openapi: 3.1.0
 info:
-  title: 保険料試算サービス (Simulation Service)
-  description: 保険料を試算するステートレスAPI。データは永続化せず、入力に応じて都度計算します。契約(policy)サービスの保険料と同一の算出ロジックを用います。
+  title: Property Insurance Premium Simulation API
+  description: Calculate a property insurance premium simulation (simulations) for
+    an insurance product using customer age, sum insured, and smoking status. The
+    API does not store simulations and uses the same premium calculation as insurance
+    policies.
   version: 1.0.0
 paths:
   /health:
     get:
       tags:
       - health
-      summary: ヘルスチェック
+      summary: Check service health
       operationId: health_health_get
       responses:
         '200':
@@ -20,7 +23,10 @@ paths:
     post:
       tags:
       - simulation
-      summary: 保険料の試算
+      summary: Calculate an insurance premium
+      description: Create a property insurance premium simulation (simulations) or
+        quote for a product and requested sum insured. Returns monthly and annual
+        premium estimates without storing the result.
       operationId: simulate_simulations_post
       requestBody:
         content:
@@ -48,19 +54,21 @@ components:
         base_annual:
           type: integer
           title: Base Annual
-          description: 年間ベース保険料(円)
+          description: Base annual insurance premium in Japanese yen.
         variable_annual:
           type: integer
           title: Variable Annual
-          description: 保険金額比例部分の年間保険料(円)
+          description: Annual insurance premium component proportional to the sum
+            insured, in Japanese yen.
         smoker_surcharge:
           type: integer
           title: Smoker Surcharge
-          description: 喫煙割増(円)
+          description: Annual smoker surcharge for medical or accident insurance,
+            in Japanese yen.
         age_factor:
           type: number
           title: Age Factor
-          description: 年齢係数
+          description: Age factor used in the insurance premium calculation.
       type: object
       required:
       - base_annual
@@ -82,26 +90,29 @@ components:
         product_id:
           type: string
           title: Product Id
-          description: 試算対象商品(商品ID)
+          description: Insurance product ID to quote or simulate (PRD-NNN).
           examples:
           - PRD-004
         birth_date:
           type: string
           title: Birth Date
-          description: 生年月日(YYYY-MM-DD)。年齢計算に使用
+          description: Customer's date of birth (YYYY-MM-DD), used to calculate age
+            for the insurance premium.
           examples:
           - '1985-04-12'
         gender:
           type: string
           title: Gender
-          description: 性別
+          description: Customer's gender, retained in the simulation request. Values
+            remain in Japanese.
           default: 回答しない
           examples:
           - 男性
         sum_insured:
           type: integer
           title: Sum Insured
-          description: 希望保険金額(円)
+          description: Requested insurance coverage amount or sum insured in Japanese
+            yen.
           examples:
           - 3000000
         payment_period:
@@ -109,13 +120,15 @@ components:
           - type: string
           - type: 'null'
           title: Payment Period
-          description: 払込期間
+          description: Requested insurance premium payment period; retained in the
+            simulation request.
           examples:
           - 1年（自動更新）
         smoker_flag:
           type: boolean
           title: Smoker Flag
-          description: 喫煙の有無(医療・傷害保険で保険料に影響)
+          description: Whether the customer smokes; increases premiums for medical
+            and accident insurance.
           default: false
       type: object
       required:
@@ -137,18 +150,18 @@ components:
         age:
           type: integer
           title: Age
-          description: 試算基準日時点の年齢
+          description: Customer's age on the simulation date.
         sum_insured:
           type: integer
           title: Sum Insured
         monthly_premium:
           type: integer
           title: Monthly Premium
-          description: 月額保険料(円)
+          description: Estimated monthly insurance premium in Japanese yen.
         annual_premium:
           type: integer
           title: Annual Premium
-          description: 年額保険料(円)
+          description: Estimated annual insurance premium in Japanese yen.
         breakdown:
           $ref: '#/components/schemas/Breakdown'
       type: object
@@ -190,7 +203,7 @@ components:
       title: ValidationError
 tags:
 - name: simulation
-  description: 保険料の試算
+  description: Calculate property insurance premium simulation (simulations) and quotes.
 servers:
 - url: http://simulation.insurance.svc.cluster.local:8000
-  description: Kubernetes クラスタ内の Service
+  description: Service inside the Kubernetes cluster

@@ -1,14 +1,16 @@
 openapi: 3.1.0
 info:
-  title: 商品サービス (Product Service)
-  description: 損害保険商品マスタを提供するAPI。火災・自動車・傷害・医療・ペットの各保険商品を管理します。
+  title: Property Insurance Product API
+  description: Manage property insurance product (products) and coverage offerings.
+    Find fire, auto, accident, medical, and pet insurance products, including coverage,
+    eligibility, insured amounts, premium rates, riders, and sales status.
   version: 1.0.0
 paths:
   /health:
     get:
       tags:
       - health
-      summary: ヘルスチェック
+      summary: Check service health
       operationId: health_health_get
       responses:
         '200':
@@ -20,7 +22,9 @@ paths:
     get:
       tags:
       - products
-      summary: 商品一覧の取得
+      summary: List insurance products
+      description: List property insurance product (products), optionally filtered
+        by insurance category or sales status.
       operationId: list_products_products_get
       parameters:
       - name: category
@@ -30,9 +34,11 @@ paths:
           anyOf:
           - type: string
           - type: 'null'
-          description: 商品カテゴリで絞り込み
+          description: Filter insurance products by product category, such as fire,
+            auto, accident, medical, or pet insurance. Values remain in Japanese.
           title: Category
-        description: 商品カテゴリで絞り込み
+        description: Filter insurance products by product category, such as fire,
+          auto, accident, medical, or pet insurance. Values remain in Japanese.
       - name: status
         in: query
         required: false
@@ -40,17 +46,20 @@ paths:
           anyOf:
           - type: string
           - type: 'null'
-          description: 販売状況で絞り込み
+          description: Filter insurance products by sales status. Values remain in
+            Japanese.
           title: Status
-        description: 販売状況で絞り込み
+        description: Filter insurance products by sales status. Values remain in Japanese.
       - name: skip
         in: query
         required: false
         schema:
           type: integer
           minimum: 0
+          description: Number of insurance products to skip for pagination.
           default: 0
           title: Skip
+        description: Number of insurance products to skip for pagination.
       - name: limit
         in: query
         required: false
@@ -58,8 +67,10 @@ paths:
           type: integer
           maximum: 100
           minimum: 1
+          description: Maximum number of insurance products to return (1 to 100).
           default: 50
           title: Limit
+        description: Maximum number of insurance products to return (1 to 100).
       responses:
         '200':
           description: Successful Response
@@ -76,7 +87,9 @@ paths:
     post:
       tags:
       - products
-      summary: 商品の新規登録
+      summary: Create an insurance product
+      description: Create a property insurance product with coverage, eligibility,
+        and premium rate details.
       operationId: create_product_products_post
       requestBody:
         required: true
@@ -101,7 +114,9 @@ paths:
     get:
       tags:
       - products
-      summary: 商品の取得
+      summary: Get an insurance product
+      description: Get one property insurance product by its product ID, including
+        coverage and premium details.
       operationId: get_product_products__product_id__get
       parameters:
       - name: product_id
@@ -109,7 +124,9 @@ paths:
         required: true
         schema:
           type: string
+          description: ID of the insurance product to retrieve (PRD-NNN).
           title: Product Id
+        description: ID of the insurance product to retrieve (PRD-NNN).
       responses:
         '200':
           description: Successful Response
@@ -126,7 +143,8 @@ paths:
     put:
       tags:
       - products
-      summary: 商品の更新
+      summary: Update an insurance product
+      description: Replace a property insurance product by its product ID.
       operationId: update_product_products__product_id__put
       parameters:
       - name: product_id
@@ -134,7 +152,9 @@ paths:
         required: true
         schema:
           type: string
+          description: ID of the insurance product to update (PRD-NNN).
           title: Product Id
+        description: ID of the insurance product to update (PRD-NNN).
       requestBody:
         required: true
         content:
@@ -157,7 +177,8 @@ paths:
     delete:
       tags:
       - products
-      summary: 商品の削除
+      summary: Delete an insurance product
+      description: Delete a property insurance product by its product ID.
       operationId: delete_product_products__product_id__delete
       parameters:
       - name: product_id
@@ -165,7 +186,9 @@ paths:
         required: true
         schema:
           type: string
+          description: ID of the insurance product to delete (PRD-NNN).
           title: Product Id
+        description: ID of the insurance product to delete (PRD-NNN).
       responses:
         '204':
           description: Successful Response
@@ -191,17 +214,17 @@ components:
         annual_rate_on_sum_insured:
           type: number
           title: Annual Rate On Sum Insured
-          description: 保険金額に対する年間保険料率
+          description: Annual premium rate applied to the sum insured.
         annual_base_premium:
           type: integer
           title: Annual Base Premium
-          description: 年間ベース保険料(円)
+          description: Base annual insurance premium in Japanese yen.
         note:
           anyOf:
           - type: string
           - type: 'null'
           title: Note
-          description: 補足
+          description: Additional notes about the insurance premium rate.
       type: object
       required:
       - annual_rate_on_sum_insured
@@ -212,74 +235,75 @@ components:
         product_code:
           type: string
           title: Product Code
-          description: 社内商品コード
+          description: Internal code for the insurance product.
           examples:
           - FIRE-STD
         product_name:
           type: string
           title: Product Name
-          description: 商品名(愛称含む)
+          description: Insurance product name, including its marketing name.
           examples:
           - 火災保険「住まいの安心」
         category:
           type: string
           title: Category
-          description: 商品カテゴリ
+          description: Insurance product category, such as fire, auto, accident, medical,
+            or pet insurance.
           examples:
           - 火災保険
         description:
           type: string
           title: Description
-          description: 商品説明文
+          description: Description of the insurance product and its purpose.
         coverage_summary:
           type: string
           title: Coverage Summary
-          description: 主契約の保障内容概要
+          description: Summary of coverage under the main insurance policy.
         min_age:
           type: integer
           title: Min Age
-          description: 加入可能な最低年齢
+          description: Minimum eligible age for this insurance product.
           examples:
           - 18
         max_age:
           type: integer
           title: Max Age
-          description: 加入可能な最高年齢
+          description: Maximum eligible age for this insurance product.
           examples:
           - 99
         policy_term:
           type: string
           title: Policy Term
-          description: 保険期間
+          description: Coverage period or term of the insurance policy.
           examples:
           - 1〜5年
         min_sum_insured:
           type: integer
           title: Min Sum Insured
-          description: 保険金額の下限(円)
+          description: Minimum sum insured in Japanese yen.
         max_sum_insured:
           type: integer
           title: Max Sum Insured
-          description: 保険金額の上限(円)
+          description: Maximum sum insured in Japanese yen.
         premium_rate_table:
           $ref: '#/components/schemas/PremiumRateTable'
-          description: 保険料算出係数
+          description: Rates and factors used to calculate insurance premiums.
         riders:
           items:
             type: string
           type: array
           title: Riders
-          description: 付帯可能な特約一覧
+          description: Optional riders available for this insurance product.
         status:
           type: string
           title: Status
-          description: 販売状況
+          description: Sales status of the insurance product.
           examples:
           - 販売中
         product_id:
           type: string
           title: Product Id
-          description: 商品ID(PRD-NNN)
+          description: Insurance product ID (PRD-NNN).
           examples:
           - PRD-001
         created_at:
@@ -311,68 +335,69 @@ components:
         product_code:
           type: string
           title: Product Code
-          description: 社内商品コード
+          description: Internal code for the insurance product.
           examples:
           - FIRE-STD
         product_name:
           type: string
           title: Product Name
-          description: 商品名(愛称含む)
+          description: Insurance product name, including its marketing name.
           examples:
           - 火災保険「住まいの安心」
         category:
           type: string
           title: Category
-          description: 商品カテゴリ
+          description: Insurance product category, such as fire, auto, accident, medical,
+            or pet insurance.
           examples:
           - 火災保険
         description:
           type: string
           title: Description
-          description: 商品説明文
+          description: Description of the insurance product and its purpose.
         coverage_summary:
           type: string
           title: Coverage Summary
-          description: 主契約の保障内容概要
+          description: Summary of coverage under the main insurance policy.
         min_age:
           type: integer
           title: Min Age
-          description: 加入可能な最低年齢
+          description: Minimum eligible age for this insurance product.
           examples:
           - 18
         max_age:
           type: integer
           title: Max Age
-          description: 加入可能な最高年齢
+          description: Maximum eligible age for this insurance product.
           examples:
           - 99
         policy_term:
           type: string
           title: Policy Term
-          description: 保険期間
+          description: Coverage period or term of the insurance policy.
           examples:
           - 1〜5年
         min_sum_insured:
           type: integer
           title: Min Sum Insured
-          description: 保険金額の下限(円)
+          description: Minimum sum insured in Japanese yen.
         max_sum_insured:
           type: integer
           title: Max Sum Insured
-          description: 保険金額の上限(円)
+          description: Maximum sum insured in Japanese yen.
         premium_rate_table:
           $ref: '#/components/schemas/PremiumRateTable'
-          description: 保険料算出係数
+          description: Rates and factors used to calculate insurance premiums.
         riders:
           items:
             type: string
           type: array
           title: Riders
-          description: 付帯可能な特約一覧
+          description: Optional riders available for this insurance product.
         status:
           type: string
           title: Status
-          description: 販売状況
+          description: Sales status of the insurance product.
           examples:
           - 販売中
       type: object
@@ -433,7 +458,7 @@ components:
       title: ValidationError
 tags:
 - name: products
-  description: 商品マスタの参照・管理
+  description: Read and manage property insurance product (products).
 servers:
 - url: http://product.insurance.svc.cluster.local:8000
-  description: Kubernetes クラスタ内の Service
+  description: Service inside the Kubernetes cluster

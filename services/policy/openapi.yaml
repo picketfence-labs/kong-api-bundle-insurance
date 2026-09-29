@@ -1,14 +1,16 @@
 openapi: 3.1.0
 info:
-  title: 契約サービス (Policy Service)
-  description: 成立した保険契約を管理するAPI。証券番号・保険金額・保険料・契約ステータスを保持します。
+  title: Property Insurance Policy API
+  description: Manage property insurance policy (policies) created from approved applications.
+    Find policy numbers, policyholders, insured products, coverage amounts, premiums,
+    terms, beneficiaries, and status. Insurance claims refer to these policies.
   version: 1.0.0
 paths:
   /health:
     get:
       tags:
       - health
-      summary: ヘルスチェック
+      summary: Check service health
       operationId: health_health_get
       responses:
         '200':
@@ -20,7 +22,9 @@ paths:
     get:
       tags:
       - policies
-      summary: 契約一覧の取得
+      summary: List insurance policies
+      description: List property insurance policy (policies), optionally filtered
+        by policyholder customer, insurance product, or policy status.
       operationId: list_policies_policies_get
       parameters:
       - name: customer_id
@@ -30,9 +34,9 @@ paths:
           anyOf:
           - type: string
           - type: 'null'
-          description: 顧客IDで絞り込み
+          description: Filter insurance policies by policyholder customer ID (CUS-NNNNNN).
           title: Customer Id
-        description: 顧客IDで絞り込み
+        description: Filter insurance policies by policyholder customer ID (CUS-NNNNNN).
       - name: product_id
         in: query
         required: false
@@ -40,9 +44,9 @@ paths:
           anyOf:
           - type: string
           - type: 'null'
-          description: 商品IDで絞り込み
+          description: Filter insurance policies by covered insurance product ID (PRD-NNN).
           title: Product Id
-        description: 商品IDで絞り込み
+        description: Filter insurance policies by covered insurance product ID (PRD-NNN).
       - name: status
         in: query
         required: false
@@ -50,17 +54,21 @@ paths:
           anyOf:
           - type: string
           - type: 'null'
-          description: ステータスで絞り込み
+          description: Filter insurance policies by policy status. Values remain in
+            Japanese.
           title: Status
-        description: ステータスで絞り込み
+        description: Filter insurance policies by policy status. Values remain in
+          Japanese.
       - name: skip
         in: query
         required: false
         schema:
           type: integer
           minimum: 0
+          description: Number of insurance policies to skip for pagination.
           default: 0
           title: Skip
+        description: Number of insurance policies to skip for pagination.
       - name: limit
         in: query
         required: false
@@ -68,8 +76,10 @@ paths:
           type: integer
           maximum: 100
           minimum: 1
+          description: Maximum number of insurance policies to return (1 to 100).
           default: 50
           title: Limit
+        description: Maximum number of insurance policies to return (1 to 100).
       responses:
         '200':
           description: Successful Response
@@ -86,7 +96,8 @@ paths:
     post:
       tags:
       - policies
-      summary: 契約の新規登録
+      summary: Create an insurance policy
+      description: Create a property insurance policy from an approved application.
       operationId: create_policy_policies_post
       requestBody:
         required: true
@@ -111,7 +122,9 @@ paths:
     get:
       tags:
       - policies
-      summary: 契約の取得
+      summary: Get an insurance policy
+      description: Get one property insurance policy by policy ID, including coverage,
+        premium, and policyholder details.
       operationId: get_policy_policies__policy_id__get
       parameters:
       - name: policy_id
@@ -119,7 +132,9 @@ paths:
         required: true
         schema:
           type: string
+          description: ID of the insurance policy to retrieve (POL-NNNNNN).
           title: Policy Id
+        description: ID of the insurance policy to retrieve (POL-NNNNNN).
       responses:
         '200':
           description: Successful Response
@@ -136,7 +151,8 @@ paths:
     put:
       tags:
       - policies
-      summary: 契約の更新
+      summary: Update an insurance policy
+      description: Replace a property insurance policy by policy ID.
       operationId: update_policy_policies__policy_id__put
       parameters:
       - name: policy_id
@@ -144,7 +160,9 @@ paths:
         required: true
         schema:
           type: string
+          description: ID of the insurance policy to update (POL-NNNNNN).
           title: Policy Id
+        description: ID of the insurance policy to update (POL-NNNNNN).
       requestBody:
         required: true
         content:
@@ -167,7 +185,8 @@ paths:
     delete:
       tags:
       - policies
-      summary: 契約の削除
+      summary: Delete an insurance policy
+      description: Delete a property insurance policy by policy ID.
       operationId: delete_policy_policies__policy_id__delete
       parameters:
       - name: policy_id
@@ -175,7 +194,9 @@ paths:
         required: true
         schema:
           type: string
+          description: ID of the insurance policy to delete (POL-NNNNNN).
           title: Policy Id
+        description: ID of the insurance policy to delete (POL-NNNNNN).
       responses:
         '204':
           description: Successful Response
@@ -192,11 +213,11 @@ components:
         name:
           type: string
           title: Name
-          description: 受取人氏名
+          description: Name of the insurance benefit beneficiary.
         relationship:
           type: string
           title: Relationship
-          description: 続柄
+          description: Beneficiary's relationship to the insured person.
       type: object
       required:
       - name
@@ -216,19 +237,19 @@ components:
         species:
           type: string
           title: Species
-          description: 種別
+          description: Species of the pet covered by pet insurance.
         breed:
           type: string
           title: Breed
-          description: 品種
+          description: Breed of the insured pet.
         name:
           type: string
           title: Name
-          description: ペットの名前
+          description: Name of the insured pet.
         age:
           type: integer
           title: Age
-          description: ペットの年齢
+          description: Age of the insured pet in years.
       type: object
       required:
       - species
@@ -241,87 +262,88 @@ components:
         policy_number:
           type: string
           title: Policy Number
-          description: 証券番号
+          description: Insurance policy number printed on the policy document.
           examples:
           - 2025-FIRE-000001
         application_id:
           type: string
           title: Application Id
-          description: 由来の申込ID
+          description: Approved insurance application ID that resulted in this policy.
           examples:
           - APP-000001
         customer_id:
           type: string
           title: Customer Id
-          description: 契約者(顧客ID)
+          description: Customer ID of the insurance policyholder.
           examples:
           - CUS-000001
         product_id:
           type: string
           title: Product Id
-          description: 契約商品(商品ID)
+          description: Insurance product ID covered by this policy.
           examples:
           - PRD-001
         contract_date:
           type: string
           title: Contract Date
-          description: 契約日(YYYY-MM-DD)
+          description: Date the insurance policy was contracted (YYYY-MM-DD).
         effective_date:
           type: string
           title: Effective Date
-          description: 保険始期日(YYYY-MM-DD)
+          description: Date insurance coverage begins (YYYY-MM-DD).
         expiry_date:
           anyOf:
           - type: string
           - type: 'null'
           title: Expiry Date
-          description: 保険終期日(YYYY-MM-DD)
+          description: Date insurance coverage ends (YYYY-MM-DD), if set.
         sum_insured:
           type: integer
           title: Sum Insured
-          description: 契約保険金額(円)
+          description: Insurance policy coverage amount or sum insured in Japanese
+            yen.
         premium_amount:
           type: integer
           title: Premium Amount
-          description: 保険料(円)
+          description: Insurance policy premium amount in Japanese yen.
         premium_payment_cycle:
           type: string
           title: Premium Payment Cycle
-          description: 払込周期
+          description: Frequency of insurance premium payments.
           examples:
           - 月払
         payment_method:
           type: string
           title: Payment Method
-          description: 支払方法
+          description: Method for paying the insurance premium.
           examples:
           - 口座振替
         status:
           type: string
           title: Status
-          description: 契約ステータス
+          description: Insurance policy status. Values remain in Japanese.
           examples:
           - 有効
         beneficiary:
           anyOf:
           - $ref: '#/components/schemas/Beneficiary'
           - type: 'null'
-          description: 受取人情報
+          description: Insurance benefit beneficiary information.
         insured_pet:
           anyOf:
           - $ref: '#/components/schemas/InsuredPet'
           - type: 'null'
-          description: 被保険動物(ペット保険のみ)
+          description: Pet covered by this pet insurance policy.
         riders:
           items:
             type: string
           type: array
           title: Riders
-          description: 付帯特約
+          description: Optional insurance riders attached to this policy.
         policy_id:
           type: string
           title: Policy Id
-          description: 契約ID(POL-NNNNNN)
+          description: Insurance policy ID (POL-NNNNNN).
           examples:
           - POL-000001
         created_at:
@@ -352,83 +374,84 @@ components:
         policy_number:
           type: string
           title: Policy Number
-          description: 証券番号
+          description: Insurance policy number printed on the policy document.
           examples:
           - 2025-FIRE-000001
         application_id:
           type: string
           title: Application Id
-          description: 由来の申込ID
+          description: Approved insurance application ID that resulted in this policy.
           examples:
           - APP-000001
         customer_id:
           type: string
           title: Customer Id
-          description: 契約者(顧客ID)
+          description: Customer ID of the insurance policyholder.
           examples:
           - CUS-000001
         product_id:
           type: string
           title: Product Id
-          description: 契約商品(商品ID)
+          description: Insurance product ID covered by this policy.
           examples:
           - PRD-001
         contract_date:
           type: string
           title: Contract Date
-          description: 契約日(YYYY-MM-DD)
+          description: Date the insurance policy was contracted (YYYY-MM-DD).
         effective_date:
           type: string
           title: Effective Date
-          description: 保険始期日(YYYY-MM-DD)
+          description: Date insurance coverage begins (YYYY-MM-DD).
         expiry_date:
           anyOf:
           - type: string
           - type: 'null'
           title: Expiry Date
-          description: 保険終期日(YYYY-MM-DD)
+          description: Date insurance coverage ends (YYYY-MM-DD), if set.
         sum_insured:
           type: integer
           title: Sum Insured
-          description: 契約保険金額(円)
+          description: Insurance policy coverage amount or sum insured in Japanese
+            yen.
         premium_amount:
           type: integer
           title: Premium Amount
-          description: 保険料(円)
+          description: Insurance policy premium amount in Japanese yen.
         premium_payment_cycle:
           type: string
           title: Premium Payment Cycle
-          description: 払込周期
+          description: Frequency of insurance premium payments.
           examples:
           - 月払
         payment_method:
           type: string
           title: Payment Method
-          description: 支払方法
+          description: Method for paying the insurance premium.
           examples:
           - 口座振替
         status:
           type: string
           title: Status
-          description: 契約ステータス
+          description: Insurance policy status. Values remain in Japanese.
           examples:
           - 有効
         beneficiary:
           anyOf:
           - $ref: '#/components/schemas/Beneficiary'
           - type: 'null'
-          description: 受取人情報
+          description: Insurance benefit beneficiary information.
         insured_pet:
           anyOf:
           - $ref: '#/components/schemas/InsuredPet'
           - type: 'null'
-          description: 被保険動物(ペット保険のみ)
+          description: Pet covered by this pet insurance policy.
         riders:
           items:
             type: string
           type: array
           title: Riders
-          description: 付帯特約
+          description: Optional insurance riders attached to this policy.
       type: object
       required:
       - policy_number
@@ -486,7 +509,7 @@ components:
       title: ValidationError
 tags:
 - name: policies
-  description: 契約の参照・管理
+  description: Read and manage property insurance policy (policies).
 servers:
 - url: http://policy.insurance.svc.cluster.local:8000
-  description: Kubernetes クラスタ内の Service
+  description: Service inside the Kubernetes cluster
